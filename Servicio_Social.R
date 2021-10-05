@@ -31,7 +31,7 @@ group_season<-function(data){
     if((as.numeric(format(data[i],'%m'))==10)|
        (as.numeric(format(data[i],'%m'))==11)|
        (as.numeric(format(data[i],'%m'))==12)){
-      temp1<-"Oto?o"
+      temp1<-"Otoño"
     }
     if((as.numeric(format(data[i],'%m'))==1)|
        (as.numeric(format(data[i],'%m'))==2)|
@@ -128,7 +128,7 @@ group_data.frame<-function(state){
                      group_season(presipitation$Fecha),
                      presipitation$Fecha)
   }
-  names(data)=c("Temp min","Temp max","Presipitaci?n","Tarifa","Estación","Fecha")
+  names(data)=c("Temp min","Temp max","Presipitación","Tarifa","Estación","Fecha")
   data<-na.omit(data)
   return(data)
 }
@@ -146,8 +146,8 @@ group_dams<-function(state){
   data<-group_filter(data,"Presa",2011:2021)
   data<-merge(x = temp, y = data, all = TRUE)
   data<-na.omit(data)
-  data<-data.frame(data[,2:4],data[,7],data[,5:6],data[,1])
-  names(data)=c("Temp min","Temp max","Presipitación","Presa","Tarifa","Estación","Fecha")
+  data<-data.frame(data[,2:4],as.numeric(data[,7]),data[,5],data[,1])
+  names(data)=c("Temp min","Temp max","Presipitación","Presa","Tarifa","Fecha")
   
   return(data)
   
@@ -159,7 +159,7 @@ N.L<-group_data.frame("N.L")
 CDMX.Dams<-group_dams("CDMX")
 N.L.Dams<-group_dams("N.L")
 
-#####      DISTRIBUCI?N DE LOS DATOS  #####
+#####      DISTRIBUCIÓN DE LOS DATOS  #####
 
 library(stats) 
 library(survival)
@@ -169,7 +169,7 @@ library(tidyverse)
 library(actuar)
 library(vcd)
 library(MASS)
-#install.packages("tidyverse")
+#install.packages("grid")
 
 # Se comparan ?nicamente las distribuciones con un dominio [0, +inf)
 substring_data.frame<-function(data,column,row,string,start,correction){
@@ -210,7 +210,7 @@ distribution_comparison<-function(data,datum){
     mlinvweibull(data$`Temp min`),
     mllgamma(data$`Temp min`)
   )
-  aic_comparison.tmin<-aic_comparison.tmin %>% rownames_to_column(var = "Distribuci?n") %>% arrange(AIC)
+  aic_comparison.tmin<-aic_comparison.tmin %>% rownames_to_column(var = "Distribución") %>% arrange(AIC)
   
   # Se comparan ?nicamente las distribuciones con un dominio [0, +inf)
   bic_comparison.tmin<- BIC(
@@ -238,7 +238,7 @@ distribution_comparison<-function(data,datum){
     mlinvweibull(data$`Temp min`),
     mllgamma(data$`Temp min`)
   )
-  bic_comparison.tmin<-bic_comparison.tmin %>% rownames_to_column(var = "Distribuci?n") %>% arrange(BIC)
+  bic_comparison.tmin<-bic_comparison.tmin %>% rownames_to_column(var = "Distribución") %>% arrange(BIC)
   
   aic_comparison.tmax<- AIC(
     mlcauchy(data$`Temp max`),
@@ -265,7 +265,7 @@ distribution_comparison<-function(data,datum){
     mlinvweibull(data$`Temp max`),
     mllgamma(data$`Temp max`)
   )
-  aic_comparison.tmax<-aic_comparison.tmax %>% rownames_to_column(var = "Distribuci?n") %>% arrange(AIC)
+  aic_comparison.tmax<-aic_comparison.tmax %>% rownames_to_column(var = "Distribución") %>% arrange(AIC)
   
   # Se comparan ?nicamente las distribuciones con un dominio [0, +inf)
   bic_comparison.tmax<- BIC(
@@ -293,62 +293,63 @@ distribution_comparison<-function(data,datum){
     mlinvweibull(data$`Temp max`),
     mllgamma(data$`Temp max`)
   )
-  bic_comparison.tmax<-bic_comparison.tmax %>% rownames_to_column(var = "Distribuci?n") %>% arrange(BIC)
+  bic_comparison.tmax<-bic_comparison.tmax %>% rownames_to_column(var = "Distribución") %>% arrange(BIC)
   
-  aic_comparison.tmedia<- AIC(
-    mlcauchy(data$`Temp media`),
-    mlgumbel(data$`Temp media`),
-    mllaplace(data$`Temp media`),
-    #mllogis(data$`Temp media`),
-    mlllogis(data$`Temp media`),
-    #mllomax(data$`Temp media`),
-    mlpareto(data$`Temp media`),
-    #mlbeta(data$`Temp media`),
-    #mlkumar(data$`Temp media`),
-    #mllogitnorm(data$`Temp media`),
-    mlunif(data$`Temp media`),
-    mlpower(data$`Temp media`),
-    #mlnorm(data$`Temp media`),
-    mlbetapr(data$`Temp media`),
-    mlexp(data$`Temp media`),
-    mlinvgamma(data$`Temp media`),
-    #mlgamma(data$`Temp media`),
-    mllnorm(data$`Temp media`),
-    mlrayleigh(data$`Temp media`),
-    mlinvgauss(data$`Temp media`),
-    mlweibull(data$`Temp media`),
-    mlinvweibull(data$`Temp media`),
-    mllgamma(data$`Temp media`)
+  aic_comparison.tarifas<- AIC(
+    mlcauchy(data$Tarifa),
+    mlgumbel(data$Tarifa),
+    mllaplace(data$Tarifa),
+    #mllogis(data$`Temp min`),
+    mlllogis(data$Tarifa),
+    #mllomax(data$`Temp min`),
+    mlpareto(data$Tarifa),
+    #mlbeta(data$`Temp min`),
+    #mlkumar(data$`Temp min`),
+    #mllogitnorm(data$`Temp min`),
+    mlunif(data$Tarifa),
+    mlpower(data$Tarifa),
+    #fitdistr(data$`Temp min`,"normal")$estimate,
+    mlbetapr(data$Tarifa),
+    mlexp(data$Tarifa),
+    mlinvgamma(data$Tarifa),
+    #mlgamma(data$`Temp min`),
+    mllnorm(data$Tarifa),
+    mlrayleigh(data$Tarifa),
+    mlinvgauss(data$Tarifa),
+    mlweibull(data$Tarifa),
+    mlinvweibull(data$Tarifa),
+    mllgamma(data$Tarifa)
   )
-  aic_comparison.tmedia<-aic_comparison.tmedia %>% rownames_to_column(var = "Distribuci?n") %>% arrange(AIC)
+  aic_comparison.tarifas<-aic_comparison.tarifas %>% rownames_to_column(var = "Distribución") %>% arrange(AIC)
   
   # Se comparan ?nicamente las distribuciones con un dominio [0, +inf)
-  bic_comparison.tmedia<- BIC(
-    mlcauchy(data$`Temp media`),
-    mlgumbel(data$`Temp media`),
-    mllaplace(data$`Temp media`),
-    #mllogis(data$`Temp media`),
-    mlllogis(data$`Temp media`),
-    #mllomax(data$`Temp media`),
-    mlpareto(data$`Temp media`),
-    #mlbeta(data$`Temp media`),
-    #mlkumar(data$`Temp media`),
-    #mllogitnorm(data$`Temp media`),
-    mlunif(data$`Temp media`),
-    mlpower(data$`Temp media`),
-    #mlnorm(data$`Temp media`),
-    mlbetapr(data$`Temp media`),
-    mlexp(data$`Temp media`),
-    mlinvgamma(data$`Temp media`),
-    #mlgamma(data$`Temp media`),
-    mllnorm(data$`Temp media`),
-    mlrayleigh(data$`Temp media`),
-    mlinvgauss(data$`Temp media`),
-    mlweibull(data$`Temp media`),
-    mlinvweibull(data$`Temp media`),
-    mllgamma(data$`Temp media`)
+  bic_comparison.tarifas<- BIC(
+    mlcauchy(data$Tarifa),
+    mlgumbel(data$Tarifa),
+    mllaplace(data$Tarifa),
+    #mllogis(data$`Temp min`),
+    mlllogis(data$Tarifa),
+    #mllomax(data$`Temp min`),
+    mlpareto(data$Tarifa),
+    #mlbeta(data$`Temp min`),
+    #mlkumar(data$`Temp min`),
+    #mllogitnorm(data$`Temp min`),
+    mlunif(data$Tarifa),
+    mlpower(data$Tarifa),
+    #mlnorm(data$`Temp min`),
+    mlbetapr(data$Tarifa),
+    mlexp(data$Tarifa),
+    mlinvgamma(data$Tarifa),
+    #mlgamma(data$`Temp min`),
+    mllnorm(data$Tarifa),
+    mlrayleigh(data$Tarifa),
+    mlinvgauss(data$Tarifa),
+    mlweibull(data$Tarifa),
+    mlinvweibull(data$Tarifa),
+    mllgamma(data$Tarifa)
   )
-  bic_comparison.tmedia<-bic_comparison.tmedia %>% rownames_to_column(var = "Distribuci?n") %>% arrange(BIC)
+  bic_comparison.tarifas<-bic_comparison.tarifas %>% rownames_to_column(var = "Distribución") %>% arrange(BIC)
+  
   
   aic_comparison.p<- AIC(
     mlcauchy(data$`Presipitación`),
@@ -375,7 +376,7 @@ distribution_comparison<-function(data,datum){
     #mlinvweibull(data$`Presipitaci?n`),
     #mllgamma(data$`Presipitaci?n`)
   )
-  aic_comparison.p<-aic_comparison.p %>% rownames_to_column(var = "Distribuci?n") %>% arrange(AIC)
+  aic_comparison.p<-aic_comparison.p %>% rownames_to_column(var = "Distribución") %>% arrange(AIC)
   
   # Se comparan ?nicamente las distribuciones con un dominio [0, +inf)
   bic_comparison.p<- BIC(
@@ -417,25 +418,90 @@ distribution_comparison<-function(data,datum){
     
   }
   
-  if(datum=="Temp media"){
-    temp<-data.frame(aic_comparison.tmedia[1:5,1],bic_comparison.tmedia[1:5,1])
-    names(temp)=c("Temp media AIC","Temp media BIC")
-  }
-  
-  if(datum=="Presipitaci?n"){
+  if(datum=="Presipitación"){
     temp<-data.frame(aic_comparison.p[1:5,1],bic_comparison.p[1:5,1])
     names(temp)=c("Presipitación AIC","Presipitación BIC")
     
   }
   if(datum=="All"){
     temp
-    temp<-data.frame(merge(aic_comparison.tmin,bic_comparison.tmin,by="Distribución",sort=F)[1:5,1],
-                     merge(aic_comparison.tmax,bic_comparison.tmax,by="Distribución",sort=F)[1:5,1],
-                     merge(aic_comparison.tmedia,bic_comparison.tmedia,by="Distribución",sort=F)[1:5,1],
-                     merge(aic_comparison.p,bic_comparison.p,by="Distribución",sort=F)[1:5,1])
+    temp<-data.frame(merge(aic_comparison.tmin,bic_comparison.tmin,by="Distribución",sort=F)[1:6,1],
+                     merge(aic_comparison.tmax,bic_comparison.tmax,by="Distribución",sort=F)[1:6,1],
+                     merge(aic_comparison.tarifas,bic_comparison.tarifas,by="Distribución",sort=F)[1:6,1],
+                     merge(aic_comparison.p,bic_comparison.p,by="Distribución",sort=F)[1:6,1])
     names(temp)=c("Temp min",
                   "Temp max",
-                  "Temp media",
+                  "Tarifa",
+                  "Presipitación")
+    
+  }
+  if(datum=="Presa"){
+    aic_comparison.presa<- AIC(
+      mlcauchy(data$Presa),
+      mlgumbel(data$Presa),
+      mllaplace(data$Presa),
+      #mllogis(data$`Temp min`),
+      mlllogis(data$Presa),
+      #mllomax(data$`Temp min`),
+      mlpareto(data$Presa),
+      #mlbeta(data$`Temp min`),
+      #mlkumar(data$`Temp min`),
+      #mllogitnorm(data$`Temp min`),
+      mlunif(data$Presa),
+      mlpower(data$Presa),
+      #fitdistr(data$`Temp min`,"normal")$estimate,
+      mlbetapr(data$Presa),
+      mlexp(data$Presa),
+      mlinvgamma(data$Presa),
+      #mlgamma(data$`Temp min`),
+      mllnorm(data$Presa),
+      mlrayleigh(data$Presa),
+      mlinvgauss(data$Presa),
+      mlweibull(data$Presa),
+      mlinvweibull(data$Presa),
+      mllgamma(data$Presa)
+    )
+    aic_comparison.presa<-aic_comparison.presa %>% rownames_to_column(var = "Distribución") %>% arrange(AIC)
+    
+    # Se comparan ?nicamente las distribuciones con un dominio [0, +inf)
+    bic_comparison.presa<- BIC(
+      mlcauchy(data$Presa),
+      mlgumbel(data$Presa),
+      mllaplace(data$Presa),
+      #mllogis(data$`Temp min`),
+      mlllogis(data$Presa),
+      #mllomax(data$`Temp min`),
+      mlpareto(data$Presa),
+      #mlbeta(data$`Temp min`),
+      #mlkumar(data$`Temp min`),
+      #mllogitnorm(data$`Temp min`),
+      mlunif(data$Presa),
+      mlpower(data$Presa),
+      #mlnorm(data$`Temp min`),
+      mlbetapr(data$Presa),
+      mlexp(data$Presa),
+      mlinvgamma(data$Presa),
+      #mlgamma(data$`Temp min`),
+      mllnorm(data$Presa),
+      mlrayleigh(data$Presa),
+      mlinvgauss(data$Presa),
+      mlweibull(data$Presa),
+      mlinvweibull(data$Presa),
+      mllgamma(data$Presa)
+    )
+    bic_comparison.presa<-bic_comparison.presa %>% rownames_to_column(var = "Distribución") %>% arrange(BIC)
+    
+    
+    temp
+    temp<-data.frame(merge(aic_comparison.tmin,bic_comparison.tmin,by="Distribución",sort=F)[1:6,1],
+                     merge(aic_comparison.tmax,bic_comparison.tmax,by="Distribución",sort=F)[1:6,1],
+                     merge(aic_comparison.tarifas,bic_comparison.tarifas,by="Distribución",sort=F)[1:6,1],
+                     merge(aic_comparison.presa,bic_comparison.presa,by="Distribución",sort=F)[1:6,1],
+                     merge(aic_comparison.p,bic_comparison.p,by="Distribución",sort=F)[1:6,1])
+    names(temp)=c("Temp min",
+                  "Temp max",
+                  "Tarifa",
+                  "Presa",
                   "Presipitación")
     
   }
@@ -444,13 +510,10 @@ distribution_comparison<-function(data,datum){
 }
 
 distr_test<-function(data,datum,distr){
-  
-  data_end<-data.frame(Indice=1:5) 
-  
+  data_end<-data.frame(Indice=1:6) 
   for(j in datum){
-    temp_data<-data.frame(Data=numeric(0),Distribuci?n=numeric(0),
-                          KS=numeric(0),Test.KS=numeric(0)
-    )
+    temp_data<-data.frame(Data=numeric(0),Distribución=numeric(0),
+                          KS=numeric(0),Test.KS=numeric(0))
     
     for(i in 1:dim(distr)[1]){
       
@@ -465,8 +528,7 @@ distr_test<-function(data,datum,distr){
         temp<- fitdistr(data[,j], "exponential")
         Ks<- ks.test(data[,j], "pexp", rate=temp$estimate[1])
         p.v_Ks<-Ks$p.value
-        
-        
+ 
       }
       if(distr[i,j]=="weibull"){
         Ks<- ks.test(data[,j], mlweibull(data[,j]))
@@ -475,8 +537,7 @@ distr_test<-function(data,datum,distr){
       }
       if(distr[i,j]=="normal"){
         temp<-fitdistr(data[,j], "normal")
-        Ks<- ks.test(data[,j], "pnorm", mean =temp$estimate[1], sd=temp$estimate[2])
-        
+        Ks<- ks.test(data[,j], "pnorm", mean=temp$estimate[1], sd=temp$estimate[2])
         p.v_Ks<-Ks$p.value
         
         
@@ -554,21 +615,47 @@ distr_test<-function(data,datum,distr){
     
   }
   data_end<-data_end[,2:dim(data_end)[2]]
-  names<-c("Data","Distribución", "p.value K.S", "Test")
+  name<-c("Data","Distribución", "p.value K.S", "Test")
   temp<-c()
   for(i in 1:length(datum)){
-    temp<-c(temp,names)
+    temp<-c(temp,name)
   }
-  names<-temp
+  name<-temp
   
-  names(data_end)=names
+  names(data_end)=name
   return(data_end) 
 }
 
-distr.CDMX<-distr_test(CDMX,c("Temp min","Temp max","Temp media","Presipitación"),distribution_comparison(CDMX,"All"))
+distr_season<-function(data){
+  temp<-data.frame(Estación=rep("Invierno",6),distr_test(data[data$Estación=="Invierno",],c("Temp min","Temp max","Tarifa","Presipitación"),distribution_comparison(data[data$Estación=="Invierno",],"All")))
+  season<-c("Otoño","Primavera","Verano")
+  for(i in season){
+    temp<-rbind(temp,
+                data.frame(Estación=rep(i,6),
+                           distr_test(data[data$Estación==i,],c("Temp min","Temp max","Tarifa","Presipitación"),distribution_comparison(data[data$Estación==i,],"All")
+                                      )))
+  }
+  names<-c()
+  for( i in 1:4){
+    names<-c(names,c("Data","Distribución", "p.value K.S", "Test"))
+    
+  }
+  names(temp)<-c("Estación", names)
+  return(temp)
+  
+  
+}
 
-distr.N.L<-distr_test(N.L,c("Temp min","Temp max","Temp media","Presipitación"),distribution_comparison(N.L,"All"))
+d.CDMX<-distr_test(CDMX,c("Temp min","Temp max","Tarifa","Presipitación"),distribution_comparison(CDMX,"All"))
 
+d.N.L<-distr_test(N.L,c("Temp min","Temp max","Tarifa","Presipitación"),distribution_comparison(N.L,"All"))
+
+d.CDMX.Dams<-distr_test(CDMX.Dams,c("Temp min","Temp max","Tarifa","Presa","Presipitación"),distribution_comparison(CDMX.Dams,"Presa"))
+
+d.N.L.Dams<-distr_test(N.L.Dams,c("Temp min","Temp max","Tarifa","Presa","Presipitación"),distribution_comparison(N.L.Dams,"Presa"))
+
+d.S.CDMX<-distr_season(CDMX)
+d.S.N.L<-distr_season(N.L)
 
 #####      GRAFICAS DE LOS DATOS      ####
 library(ggplot2)
@@ -623,33 +710,19 @@ ggplot(data = CDMX) +
   theme(legend.position = "bottom")
 
 ggplot(data = CDMX) +
-  geom_histogram(aes(x =`Temp media`, y =  after_stat(density)),
-                 bins = 40,
-                 alpha = 0.3, color = "black") +
-  geom_rug(aes(x = `Temp media`)) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(CDMX$`Temp media`))},
-                aes(color = "Weibull"),
-                size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX$`Temp media`))},
-                aes(color = "Gauss Inv"),
-                size = 1.1) +
-  labs(title = "Distribución Temp Media CDMX",
-       color = "Distribución") +
-  theme_bw() +
-  theme(legend.position = "bottom")
 
 ggplot(data = CDMX) +
-  geom_histogram(aes(x =Presipitaci?n, y =  after_stat(density)),
+  geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
   geom_rug(aes(x = Presipitaci?n)) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX$Presipitaci?n))},
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX$Presipitación))},
                 aes(color = "Gumbel"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(CDMX$Presipitaci?n))},
+  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(CDMX$Presipitación))},
                 aes(color = "Laplace"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlcauchy(CDMX$Presipitaci?n))},
+  stat_function(fun = function(.x){dml(x = .x, obj = mlcauchy(CDMX$Presipitación))},
                 aes(color = "Cauchy"),
                 size = 1.1) +
   labs(title = "Distribución Presipitaci?n CDMX",
@@ -721,27 +794,10 @@ ggplot(data = N.L) +
   theme_bw() +
   theme(legend.position = "bottom")
 
-ggplot(data = N.L) +
-  geom_histogram(aes(x =`Temp media`, y =  after_stat(density)),
-                 bins = 40,
-                 alpha = 0.3, color = "black") +
-  geom_rug(aes(x = `Temp media`)) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlunif(N.L$`Temp media`))},
-                aes(color = "Unif"),
-                size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(N.L$`Temp media`))},
-                aes(color = "Weibull"),
-                size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(N.L$`Temp media`))},
-                aes(color = "Inv Gauss"),
-                size = 1.1) +
-  labs(title = "Distribución Temp Media N.L",
-       color = "Distribución") +
-  theme_bw() +
-  theme(legend.position = "bottom")
+
 
 ggplot(data = N.L) +
-  geom_histogram(aes(x =Presipitaci?n, y =  after_stat(density)),
+  geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
   geom_rug(aes(x = Presipitaci?n)) +
@@ -757,7 +813,7 @@ ggplot(data = N.L) +
   theme(legend.position = "bottom")
 
 ggplot(data = N.L) +
-  geom_histogram(aes(x =Presipitaci?n, y =  after_stat(density)),
+  geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
   geom_rug(aes(x = Presipitaci?n)) +
@@ -767,10 +823,122 @@ ggplot(data = N.L) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlcauchy(N.L$Presipitación))},
                 aes(color = "Cauchy"),
                 size = 1.1) +
-  labs(title = "Distribución Presipitaci?n N.L",
+  labs(title = "Distribución Presipitación N.L",
        color = "Distribución") +
   theme_bw() +
   theme(legend.position = "bottom")
+
+
+# CDMX DAMS
+
+ggplot(data = CDMX.Dams) +
+  geom_histogram(aes(x =`Temp min`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp min`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(CDMX.Dams$`Temp min`))},
+                aes(color = "Weibull"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(CDMX.Dams$`Temp min`))},
+                aes(color = "Power"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Min CDMX Dams",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+
+ggplot(data = CDMX.Dams) +
+  geom_histogram(aes(x =`Temp max`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp min`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlbetapr(CDMX.Dams$`Temp max`))},
+                aes(color = "Beta Pr"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX.Dams$`Temp max`))},
+                aes(color = "Gauss Inv"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Max CDMX Dams",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+ggplot(data = CDMX.Dams) +
+  geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = Presipitación)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(CDMX.Dams$Presipitación))},
+                aes(color = "Laplace"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX.Dams$Presipitación))},
+                aes(color = "Gumbel"),
+                size = 1.1) +
+  labs(title = "Distribución Presipitación CDMX Dams",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+# NL DAMS
+
+ggplot(data = N.L.Dams) +
+  geom_histogram(aes(x =`Temp min`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp min`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(N.L.Dams$`Temp min`))},
+                aes(color = "Weibull"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(N.L.Dams$`Temp min`))},
+                aes(color = "Power"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(N.L.Dams$`Temp min`))},
+                aes(color = "Gumbel"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Min N.L Dams",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+
+ggplot(data = N.L.Dams) +
+  geom_histogram(aes(x =`Temp max`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp min`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(N.L.Dams$`Temp max`))},
+                aes(color = "Power"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(N.L.Dams$`Temp max`))},
+                aes(color = "Weibull"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Max N.L Dams",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+ggplot(data = N.L.Dams) +
+  geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = Presipitación)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(N.L.Dams$Presipitación))},
+                aes(color = "Laplace"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlexp(N.L.Dams$Presipitación))},
+                aes(color = "Exponencial"),
+                size = 1.1) +
+  labs(title = "Distribución Presipitación N.L Dams",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
 
 #####      COPULAS  ARQUIMEDIANAS     #####
 library(copula)
