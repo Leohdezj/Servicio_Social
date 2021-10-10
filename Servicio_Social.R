@@ -659,25 +659,11 @@ d.S.N.L<-distr_season(N.L)
 
 #####      GRAFICAS DE LOS DATOS      ####
 library(ggplot2)
+library(univariateML)
 
 ## CDMX ##
-ggplot(data = CDMX) +
-  geom_histogram(aes(x =`Temp min`, y =  after_stat(density)),
-                 bins = 40,
-                 alpha = 0.3, color = "black") +
-  geom_rug(aes(x = `Temp min`)) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(CDMX$`Temp min`))},
-                aes(color = "Weibull"),
-                size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(CDMX$`Temp min`))},
-                aes(color = "Power"),
-                size = 1.1) +
-  labs(title = "Distribución Temp Min CDMX",
-       color = "Distribución") +
-  theme_bw() +
-  theme(legend.position = "bottom")
 
-ggplot(data = CDMX) +
+p.CDMX.Tm<-ggplot(data = CDMX) +
   geom_histogram(aes(x =`Temp min`, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
@@ -693,7 +679,7 @@ ggplot(data = CDMX) +
   theme_bw() +
   theme(legend.position = "bottom")
 
-ggplot(data = CDMX) +
+p.CDMX.TM<-ggplot(data = CDMX) +
   geom_histogram(aes(x =`Temp max`, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
@@ -709,13 +695,28 @@ ggplot(data = CDMX) +
   theme_bw() +
   theme(legend.position = "bottom")
 
-ggplot(data = CDMX) +
+p.CDMX.T<-ggplot(data = CDMX) +
+  geom_histogram(aes(x =Tarifa, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp max`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX$Tarifa))},
+                aes(color = "Inv Gauss"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlunif(CDMX$Tarifa))},
+                aes(color = "Uniforme"),
+                size = 1.1) +
+  labs(title = "Distribución Tarifa CDMX",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
 
-ggplot(data = CDMX) +
+
+p.CDMX.P<-ggplot(data = CDMX) +
   geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
-  geom_rug(aes(x = Presipitaci?n)) +
+  geom_rug(aes(x = Presipitación)) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX$Presipitación))},
                 aes(color = "Gumbel"),
                 size = 1.1) +
@@ -725,28 +726,14 @@ ggplot(data = CDMX) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlcauchy(CDMX$Presipitación))},
                 aes(color = "Cauchy"),
                 size = 1.1) +
-  labs(title = "Distribución Presipitaci?n CDMX",
+  labs(title = "Distribución Presipitación CDMX",
        color = "Distribución") +
   theme_bw() +
   theme(legend.position = "bottom")
 
+
 ## N.L ##
-ggplot(data = N.L) +
-  geom_histogram(aes(x =`Temp min`, y =  after_stat(density)),
-                 bins = 40,
-                 alpha = 0.3, color = "black") +
-  geom_rug(aes(x = `Temp min`)) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlunif(N.L$`Temp min`))},
-                aes(color = "Unif"),
-                size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(N.L$`Temp min`))},
-                aes(color = "Power"),
-                size = 1.1) +
-  labs(title = "Distribuci?n Temp Min N.L",
-       color = "Distribuci?n") +
-  theme_bw() +
-  theme(legend.position = "bottom")
-ggplot(data = N.L) +
+p.N.L.Tm<-ggplot(data = N.L) +
   geom_histogram(aes(x =`Temp min`, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
@@ -762,7 +749,7 @@ ggplot(data = N.L) +
   theme_bw() +
   theme(legend.position = "bottom")
 
-ggplot(data = N.L) +
+p.N.L.TM<-ggplot(data = N.L) +
   geom_histogram(aes(x =`Temp max`, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
@@ -778,60 +765,49 @@ ggplot(data = N.L) +
   theme_bw() +
   theme(legend.position = "bottom")
 
-ggplot(data = N.L) +
-  geom_histogram(aes(x =`Temp max`, y =  after_stat(density)),
+
+p.N.L.T<-ggplot(data = N.L) +
+  geom_histogram(aes(x =Tarifa, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
-  geom_rug(aes(x = `Temp max`)) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlbetapr(N.L$`Temp max`))},
-                aes(color = "Betapr"),
+  geom_rug(aes(x = Presipitación))  +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(N.L$Tarifa))},
+                aes(color = "Gauss Inv"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgamma(N.L$`Temp max`))},
-                aes(color = "Inv Gamm"),
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(N.L$Tarifa))},
+                aes(color = "Gumbel"),
                 size = 1.1) +
-  labs(title = "Distribución Temp Max N.L",
+  labs(title = "Distribución Tarifa N.L",
        color = "Distribución") +
   theme_bw() +
   theme(legend.position = "bottom")
 
 
-
-ggplot(data = N.L) +
+p.N.L.P<-ggplot(data = N.L) +
   geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
-  geom_rug(aes(x = Presipitaci?n)) +
+  geom_rug(aes(x = Presipitación)) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlexp(N.L$Presipitación))},
                 aes(color = "Exponencial"),
                 size = 1.1) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(N.L$Presipitación))},
                 aes(color = "Gumbel"),
                 size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(N.L$Presipitación))},
+              aes(color = "Laplace"),
+              size = 1.1)+
   labs(title = "Distribución Presipitación N.L",
        color = "Distribución") +
   theme_bw() +
   theme(legend.position = "bottom")
 
-ggplot(data = N.L) +
-  geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
-                 bins = 40,
-                 alpha = 0.3, color = "black") +
-  geom_rug(aes(x = Presipitaci?n)) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(N.L$Presipitación))},
-                aes(color = "Laplace"),
-                size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlcauchy(N.L$Presipitación))},
-                aes(color = "Cauchy"),
-                size = 1.1) +
-  labs(title = "Distribución Presipitación N.L",
-       color = "Distribución") +
-  theme_bw() +
-  theme(legend.position = "bottom")
+
 
 
 # CDMX DAMS
 
-ggplot(data = CDMX.Dams) +
+p.CDMX.D.Tm<-ggplot(data = CDMX.Dams) +
   geom_histogram(aes(x =`Temp min`, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
@@ -849,7 +825,7 @@ ggplot(data = CDMX.Dams) +
 
 
 
-ggplot(data = CDMX.Dams) +
+p.CDMX.D.TM<-ggplot(data = CDMX.Dams) +
   geom_histogram(aes(x =`Temp max`, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
@@ -866,7 +842,24 @@ ggplot(data = CDMX.Dams) +
   theme(legend.position = "bottom")
 
 
-ggplot(data = CDMX.Dams) +
+p.CDMX.D.T<-ggplot(data = CDMX.Dams) +
+  geom_histogram(aes(x =Tarifa, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = Presipitación)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX.Dams$Tarifa))},
+                aes(color = "Gauss Inv"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(CDMX.Dams$Tarifa))},
+                aes(color = "Weibull"),
+                size = 1.1) +
+  labs(title = "Distribución Tarifa CDMX Dams",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+p.CDMX.D.P<-ggplot(data = CDMX.Dams) +
   geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
@@ -885,7 +878,7 @@ ggplot(data = CDMX.Dams) +
 
 # NL DAMS
 
-ggplot(data = N.L.Dams) +
+p.N.L.D.Tm<-ggplot(data = N.L.Dams) +
   geom_histogram(aes(x =`Temp min`, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
@@ -906,7 +899,7 @@ ggplot(data = N.L.Dams) +
 
 
 
-ggplot(data = N.L.Dams) +
+p.N.L.D.TM<-ggplot(data = N.L.Dams) +
   geom_histogram(aes(x =`Temp max`, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
@@ -922,8 +915,24 @@ ggplot(data = N.L.Dams) +
   theme_bw() +
   theme(legend.position = "bottom")
 
+p.N.L.D.T<-ggplot(data = N.L.Dams) +
+  geom_histogram(aes(x =Tarifa, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = Presipitación)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(N.L.Dams$Tarifa))},
+                aes(color = "Gauss Inv"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(N.L.Dams$Tarifa))},
+                aes(color = "Weibull"),
+                size = 1.1) +
+  labs(title = "Distribución Tarifa N.L Dams",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
 
-ggplot(data = N.L.Dams) +
+
+p.N.L.D.P<-ggplot(data = N.L.Dams) +
   geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
@@ -935,6 +944,567 @@ ggplot(data = N.L.Dams) +
                 aes(color = "Exponencial"),
                 size = 1.1) +
   labs(title = "Distribución Presipitación N.L Dams",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+# CDMX Temporadas
+#Primavera 
+season<-"Primavera"
+p.CDMX.P.Tm<-ggplot(data = CDMX[CDMX$Estación==season,]) +
+  geom_histogram(aes(x =`Temp min`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp min`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(CDMX[CDMX$Estación==season,"Temp min"]))},
+                aes(color = "Weibull"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX[CDMX$Estación==season,"Temp min"]))},
+                aes(color = "Inv Gauss"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Min CDMX",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+p.CDMX.P.TM<-ggplot(data = CDMX[CDMX$Estación==season,]) +
+  geom_histogram(aes(x =`Temp max`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp max`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX[CDMX$Estación==season,"Temp max"]))},
+                aes(color = "Inv Gauss"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(CDMX[CDMX$Estación==season,"Temp max"]))},
+                aes(color = "Weibull"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Max CDMX",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+p.CDMX.P.T<-ggplot(data = CDMX[CDMX$Estación==season,]) +
+  geom_histogram(aes(x =Tarifa, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp max`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX[CDMX$Estación==season,"Tarifa"]))},
+                aes(color = "Inv Gauss"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlunif(CDMX[CDMX$Estación==season,"Tarifa"]))},
+                aes(color = "Uniforme"),
+                size = 1.1) +
+  labs(title = "Distribución Tarifa CDMX",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+p.CDMX.P.P<-ggplot(data = CDMX[CDMX$Estación==season,]) +
+  geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = Presipitación)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(CDMX[CDMX$Estación==season,"Presipitación"]))},
+                aes(color = "Laplace"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(CDMX[CDMX$Estación==season,"Presipitación"]))},
+                aes(color = "Power"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX[CDMX$Estación==season,"Presipitación"]))},
+                aes(color = "Gumbel"),
+                size = 1.1) +
+  labs(title = "Distribución Presipitación CDMX",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+#Verano
+season<-"Verano"
+p.CDMX.V.Tm<-ggplot(data = CDMX[CDMX$Estación==season,]) +
+  geom_histogram(aes(x =`Temp min`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp min`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX[CDMX$Estación==season,"Temp min"]))},
+                aes(color = "Gumbel"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX[CDMX$Estación==season,"Temp min"]))},
+                aes(color = "Inv Gauss"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Min CDMX",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+p.CDMX.V.TM<-ggplot(data = CDMX[CDMX$Estación==season,]) +
+  geom_histogram(aes(x =`Temp max`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp max`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvweibull(CDMX[CDMX$Estación==season,"Temp max"]))},
+                aes(color = "Inv Weibull"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX[CDMX$Estación==season,"Temp max"]))},
+                aes(color = "Inv Gauss"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Max CDMX",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+p.CDMX.V.T<-ggplot(data = CDMX[CDMX$Estación==season,]) +
+  geom_histogram(aes(x =Tarifa, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp max`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX[CDMX$Estación==season,"Tarifa"]))},
+                aes(color = "Inv Gauss"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX[CDMX$Estación==season,"Tarifa"]))},
+                aes(color = "Gumbel"),
+                size = 1.1) +
+  labs(title = "Distribución Tarifa CDMX",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+p.CDMX.V.P<-ggplot(data = CDMX[CDMX$Estación==season,]) +
+  geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = Presipitación)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(CDMX[CDMX$Estación==season,"Presipitación"]))},
+                aes(color = "Laplace"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(CDMX[CDMX$Estación==season,"Presipitación"]))},
+                aes(color = "Power"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlcauchy(CDMX[CDMX$Estación==season,"Presipitación"]))},
+                aes(color = "Cauchy"),
+                size = 1.1) +
+  labs(title = "Distribución Presipitación CDMX",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+#Otoño
+season<-"Otoño"
+p.CDMX.O.Tm<-ggplot(data = CDMX[CDMX$Estación==season,]) +
+  geom_histogram(aes(x =`Temp min`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp min`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX[CDMX$Estación==season,"Temp min"]))},
+                aes(color = "Gumbel"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX[CDMX$Estación==season,"Temp min"]))},
+                aes(color = "Inv Gauss"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Min CDMX",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+p.CDMX.O.TM<-ggplot(data = CDMX[CDMX$Estación==season,]) +
+  geom_histogram(aes(x =`Temp max`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp max`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(CDMX[CDMX$Estación==season,"Temp max"]))},
+                aes(color = "Laplace"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(CDMX[CDMX$Estación==season,"Temp max"]))},
+                aes(color = "Weibull"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Max CDMX",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+p.CDMX.O.T<-ggplot(data = CDMX[CDMX$Estación==season,]) +
+  geom_histogram(aes(x =Tarifa, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp max`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX[CDMX$Estación==season,"Tarifa"]))},
+                aes(color = "Inv Gauss"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX[CDMX$Estación==season,"Tarifa"]))},
+                aes(color = "Gumbel"),
+                size = 1.1) +
+  labs(title = "Distribución Tarifa CDMX",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+p.CDMX.O.P<-ggplot(data = CDMX[CDMX$Estación==season,]) +
+  geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = Presipitación)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(CDMX[CDMX$Estación==season,"Presipitación"]))},
+                aes(color = "Laplace"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(CDMX[CDMX$Estación==season,"Presipitación"]))},
+                aes(color = "Power"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlcauchy(CDMX[CDMX$Estación==season,"Presipitación"]))},
+                aes(color = "Cauchy"),
+                size = 1.1) +
+  labs(title = "Distribución Presipitación CDMX",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+season<-"Invierno"
+p.CDMX.I.Tm<-ggplot(data = CDMX[CDMX$Estación==season,]) +
+  geom_histogram(aes(x =`Temp min`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp min`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(CDMX[CDMX$Estación==season,"Temp min"]))},
+                aes(color = "Weibull"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(CDMX[CDMX$Estación==season,"Temp min"]))},
+                aes(color = "Laplace"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Min CDMX",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+p.CDMX.I.TM<-ggplot(data = CDMX[CDMX$Estación==season,]) +
+  geom_histogram(aes(x =`Temp max`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp max`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX[CDMX$Estación==season,"Temp max"]))},
+                aes(color = "Inv Gauss"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX[CDMX$Estación==season,"Temp max"]))},
+                aes(color = "Gumbel"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Max CDMX",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+p.CDMX.I.T<-ggplot(data = CDMX[CDMX$Estación==season,]) +
+  geom_histogram(aes(x =Tarifa, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp max`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX[CDMX$Estación==season,"Tarifa"]))},
+                aes(color = "Inv Gauss"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlunif(CDMX[CDMX$Estación==season,"Tarifa"]))},
+                aes(color = "Uniforme"),
+                size = 1.1) +
+  labs(title = "Distribución Tarifa CDMX",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+p.CDMX.I.P<-ggplot(data = CDMX[CDMX$Estación==season,]) +
+  geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = Presipitación)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(CDMX[CDMX$Estación==season,"Presipitación"]))},
+                aes(color = "Laplace"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(CDMX[CDMX$Estación==season,"Presipitación"]))},
+                aes(color = "Power"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX[CDMX$Estación==season,"Presipitación"]))},
+                aes(color = "Gumbel"),
+                size = 1.1) +
+  labs(title = "Distribución Presipitación CDMX",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+# N.L Temporadas
+#Primavera
+season<-"Primavera"
+p.N.L.P.Tm<-ggplot(data = N.L[N.L$Estación==season,]) +
+  geom_histogram(aes(x =`Temp min`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp min`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(N.L[N.L$Estación==season,"Temp min"]))},
+                aes(color = "Weibull"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(N.L[N.L$Estación==season,"Temp min"]))},
+                aes(color = "power"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Min N.L",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+p.N.L.P.TM<-ggplot(data = N.L[N.L$Estación==season,]) +
+  geom_histogram(aes(x =`Temp max`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp max`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(N.L[N.L$Estación==season,"Temp max"]))},
+                aes(color = "Weibull"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(N.L[N.L$Estación==season,"Temp max"]))},
+                aes(color = "Inv Gauss"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Max N.L",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+p.N.L.P.T<-ggplot(data = N.L[N.L$Estación==season,]) +
+  geom_histogram(aes(x =Tarifa, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = Presipitación))  +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(N.L[N.L$Estación==season,"Tarifa"]))},
+                aes(color = "Gauss Inv"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(N.L[N.L$Estación==season,"Tarifa"]))},
+                aes(color = "Gumbel"),
+                size = 1.1) +
+  labs(title = "Distribución Tarifa N.L",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+p.N.L.P.P<-ggplot(data = N.L[N.L$Estación==season,]) +
+  geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = Presipitación)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlcauchy(N.L[N.L$Estación==season,"Presipitación"]))},
+                aes(color = "Cauchy"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(N.L[N.L$Estación==season,"Presipitación"]))},
+                aes(color = "Power"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(N.L[N.L$Estación==season,"Presipitación"]))},
+                aes(color = "Laplace"),
+                size = 1.1)+
+  labs(title = "Distribución Presipitación N.L",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+#Verano
+season<-"Verano"
+p.N.L.V.Tm<-ggplot(data = N.L[N.L$Estación==season,]) +
+  geom_histogram(aes(x =`Temp min`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp min`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlcauchy(N.L[N.L$Estación==season,"Temp min"]))},
+                aes(color = "Cauchy"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(N.L[N.L$Estación==season,"Temp min"]))},
+                aes(color = "Laplace"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Min N.L",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+p.N.L.V.TM<-ggplot(data = N.L[N.L$Estación==season,]) +
+  geom_histogram(aes(x =`Temp max`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp max`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(N.L[N.L$Estación==season,"Temp max"]))},
+                aes(color = "Weibull"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(N.L[N.L$Estación==season,"Temp max"]))},
+                aes(color = "Laplace"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Max N.L",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+p.N.L.V.T<-ggplot(data = N.L[N.L$Estación==season,]) +
+  geom_histogram(aes(x =Tarifa, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = Presipitación))  +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(N.L[N.L$Estación==season,"Tarifa"]))},
+                aes(color = "Gauss Inv"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(N.L[N.L$Estación==season,"Tarifa"]))},
+                aes(color = "Gumbel"),
+                size = 1.1) +
+  labs(title = "Distribución Tarifa N.L",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+p.N.L.V.P<-ggplot(data = N.L[N.L$Estación==season,]) +
+  geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = Presipitación)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(N.L[N.L$Estación==season,"Presipitación"]))},
+                aes(color = "Power"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(N.L[N.L$Estación==season,"Presipitación"]))},
+                aes(color = "Laplace"),
+                size = 1.1)+
+  labs(title = "Distribución Presipitación N.L",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+#Otoño
+season<-"Otoño"
+p.N.L.O.Tm<-ggplot(data = N.L[N.L$Estación==season,]) +
+  geom_histogram(aes(x =`Temp min`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp min`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(N.L[N.L$Estación==season,"Temp min"]))},
+                aes(color = "Weibull"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(N.L[N.L$Estación==season,"Temp min"]))},
+                aes(color = "Power"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Min N.L",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+p.N.L.O.TM<-ggplot(data = N.L[N.L$Estación==season,]) +
+  geom_histogram(aes(x =`Temp max`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp max`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(N.L[N.L$Estación==season,"Temp max"]))},
+                aes(color = "Weibull"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(N.L[N.L$Estación==season,"Temp max"]))},
+                aes(color = "Inv Gauss"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Max N.L",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+p.N.L.O.T<-ggplot(data = N.L[N.L$Estación==season,]) +
+  geom_histogram(aes(x =Tarifa, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = Presipitación))  +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(N.L[N.L$Estación==season,"Tarifa"]))},
+                aes(color = "Gauss Inv"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(N.L[N.L$Estación==season,"Tarifa"]))},
+                aes(color = "Gumbel"),
+                size = 1.1) +
+  labs(title = "Distribución Tarifa N.L",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+p.N.L.O.P<-ggplot(data = N.L[N.L$Estación==season,]) +
+  geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = Presipitación)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlexp(N.L[N.L$Estación==season,"Presipitación"]))},
+                aes(color = "Exponencial"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(N.L[N.L$Estación==season,"Presipitación"]))},
+                aes(color = "Gumbel"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(N.L[N.L$Estación==season,"Presipitación"]))},
+                aes(color = "Laplace"),
+                size = 1.1)+
+  labs(title = "Distribución Presipitación N.L",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+#Invierno
+season<-"Invierno"
+p.N.L.I.Tm<-ggplot(data = N.L[N.L$Estación==season,]) +
+  geom_histogram(aes(x =`Temp min`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp min`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(N.L[N.L$Estación==season,"Temp min"]))},
+                aes(color = "Gauss Inv"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(N.L[N.L$Estación==season,"Temp min"]))},
+                aes(color = "Gumbel"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Min N.L",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+p.N.L.I.TM<-ggplot(data = N.L[N.L$Estación==season,]) +
+  geom_histogram(aes(x =`Temp max`, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = `Temp max`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(N.L[N.L$Estación==season,"Temp max"]))},
+                aes(color = "Weibull"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(N.L[N.L$Estación==season,"Temp max"]))},
+                aes(color = "Inv Gauss"),
+                size = 1.1) +
+  labs(title = "Distribución Temp Max N.L",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+p.N.L.I.T<-ggplot(data = N.L[N.L$Estación==season,]) +
+  geom_histogram(aes(x =Tarifa, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = Presipitación))  +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(N.L[N.L$Estación==season,"Tarifa"]))},
+                aes(color = "Gauss Inv"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(N.L[N.L$Estación==season,"Tarifa"]))},
+                aes(color = "Gumbel"),
+                size = 1.1) +
+  labs(title = "Distribución Tarifa N.L",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
+p.N.L.I.P<-ggplot(data = N.L[N.L$Estación==season,]) +
+  geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = Presipitación)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(N.L[N.L$Estación==season,"Presipitación"]))},
+                aes(color = "Power"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(N.L[N.L$Estación==season,"Presipitación"]))},
+                aes(color = "Laplace"),
+                size = 1.1)+
+  labs(title = "Distribución Presipitación N.L",
        color = "Distribución") +
   theme_bw() +
   theme(legend.position = "bottom")
