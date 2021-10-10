@@ -660,7 +660,7 @@ d.S.N.L<-distr_season(N.L)
 #####      GRAFICAS DE LOS DATOS      ####
 library(ggplot2)
 library(univariateML)
-
+library(cowplot)
 ## CDMX ##
 
 p.CDMX.Tm<-ggplot(data = CDMX) +
@@ -703,8 +703,8 @@ p.CDMX.T<-ggplot(data = CDMX) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX$Tarifa))},
                 aes(color = "Inv Gauss"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlunif(CDMX$Tarifa))},
-                aes(color = "Uniforme"),
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX$Tarifa))},
+                aes(color = "Gumbel"),
                 size = 1.1) +
   labs(title = "Distribución Tarifa CDMX",
        color = "Distribución") +
@@ -717,9 +717,6 @@ p.CDMX.P<-ggplot(data = CDMX) +
                  bins = 40,
                  alpha = 0.3, color = "black") +
   geom_rug(aes(x = Presipitación)) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX$Presipitación))},
-                aes(color = "Gumbel"),
-                size = 1.1) +
   stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(CDMX$Presipitación))},
                 aes(color = "Laplace"),
                 size = 1.1) +
@@ -732,6 +729,20 @@ p.CDMX.P<-ggplot(data = CDMX) +
   theme(legend.position = "bottom")
 
 
+
+p.CDMX<-plot_grid(p.CDMX.Tm,p.CDMX.TM,p.CDMX.T,p.CDMX.P)
+title <- ggdraw() + 
+  draw_label(
+    "Gráficas de la CDMX",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(plot.margin = margin(0, 0, 0, 7))
+
+p.CDMX<-plot_grid(title,p.CDMX,ncol = 1,
+                  # rel_heights values control vertical title margins
+                  rel_heights = c(0.1, 1))
 ## N.L ##
 p.N.L.Tm<-ggplot(data = N.L) +
   geom_histogram(aes(x =`Temp min`, y =  after_stat(density)),
@@ -803,6 +814,19 @@ p.N.L.P<-ggplot(data = N.L) +
   theme(legend.position = "bottom")
 
 
+p.N.L<-plot_grid(p.N.L.Tm,p.N.L.TM,p.N.L.T,p.N.L.P)
+title <- ggdraw() + 
+  draw_label(
+    "Gráficas de N.L",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(plot.margin = margin(0, 0, 0, 7))
+
+p.N.L<-plot_grid(title,p.N.L,ncol = 1,
+                  # rel_heights values control vertical title margins
+                  rel_heights = c(0.1, 1))
 
 
 # CDMX DAMS
@@ -818,7 +842,7 @@ p.CDMX.D.Tm<-ggplot(data = CDMX.Dams) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlpower(CDMX.Dams$`Temp min`))},
                 aes(color = "Power"),
                 size = 1.1) +
-  labs(title = "Distribución Temp Min CDMX Dams",
+  labs(title = "Distribución Temp Min CDMX",
        color = "Distribución") +
   theme_bw() +
   theme(legend.position = "bottom")
@@ -836,7 +860,7 @@ p.CDMX.D.TM<-ggplot(data = CDMX.Dams) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX.Dams$`Temp max`))},
                 aes(color = "Gauss Inv"),
                 size = 1.1) +
-  labs(title = "Distribución Temp Max CDMX Dams",
+  labs(title = "Distribución Temp Max CDMX",
        color = "Distribución") +
   theme_bw() +
   theme(legend.position = "bottom")
@@ -853,11 +877,26 @@ p.CDMX.D.T<-ggplot(data = CDMX.Dams) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(CDMX.Dams$Tarifa))},
                 aes(color = "Weibull"),
                 size = 1.1) +
-  labs(title = "Distribución Tarifa CDMX Dams",
+  labs(title = "Distribución Tarifa CDMX",
        color = "Distribución") +
   theme_bw() +
   theme(legend.position = "bottom")
 
+p.CDMX.D.D<-ggplot(data = CDMX.Dams) +
+  geom_histogram(aes(x =Presa, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = Presipitación)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX.Dams$Presa))},
+                aes(color = "Gauss Inv"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgamma(CDMX.Dams$Presa))},
+                aes(color = "Gamma Inv"),
+                size = 1.1) +
+  labs(title = "Distribución Presa CDMX",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
 
 p.CDMX.D.P<-ggplot(data = CDMX.Dams) +
   geom_histogram(aes(x =Presipitación, y =  after_stat(density)),
@@ -870,12 +909,26 @@ p.CDMX.D.P<-ggplot(data = CDMX.Dams) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX.Dams$Presipitación))},
                 aes(color = "Gumbel"),
                 size = 1.1) +
-  labs(title = "Distribución Presipitación CDMX Dams",
+  labs(title = "Distribución Presipitación CDMX",
        color = "Distribución") +
   theme_bw() +
   theme(legend.position = "bottom")
 
 
+p.CDMX.D<-plot_grid(p.CDMX.D.Tm,p.CDMX.D.TM,p.CDMX.D.D,
+                    p.CDMX.D.P)
+title <- ggdraw() + 
+  draw_label(
+    "Gráficas de la CDMX considerando presas",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(plot.margin = margin(0, 0, 0, 7))
+
+p.CDMX.D<-plot_grid(title,p.CDMX.D,ncol = 1,
+                  # rel_heights values control vertical title margins
+                  rel_heights = c(0.1, 1))
 # NL DAMS
 
 p.N.L.D.Tm<-ggplot(data = N.L.Dams) +
@@ -892,7 +945,7 @@ p.N.L.D.Tm<-ggplot(data = N.L.Dams) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(N.L.Dams$`Temp min`))},
                 aes(color = "Gumbel"),
                 size = 1.1) +
-  labs(title = "Distribución Temp Min N.L Dams",
+  labs(title = "Distribución Temp Min N.L",
        color = "Distribución") +
   theme_bw() +
   theme(legend.position = "bottom")
@@ -910,7 +963,7 @@ p.N.L.D.TM<-ggplot(data = N.L.Dams) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(N.L.Dams$`Temp max`))},
                 aes(color = "Weibull"),
                 size = 1.1) +
-  labs(title = "Distribución Temp Max N.L Dams",
+  labs(title = "Distribución Temp Max N.L",
        color = "Distribución") +
   theme_bw() +
   theme(legend.position = "bottom")
@@ -926,7 +979,23 @@ p.N.L.D.T<-ggplot(data = N.L.Dams) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(N.L.Dams$Tarifa))},
                 aes(color = "Weibull"),
                 size = 1.1) +
-  labs(title = "Distribución Tarifa N.L Dams",
+  labs(title = "Distribución Tarifa N.L",
+       color = "Distribución") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+p.N.L.D.D<-ggplot(data = N.L.Dams) +
+  geom_histogram(aes(x =Presa, y =  after_stat(density)),
+                 bins = 40,
+                 alpha = 0.3, color = "black") +
+  geom_rug(aes(x = Presipitación)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlcauchy(N.L.Dams$Presa))},
+                aes(color = "Gauss Inv"),
+                size = 1.1) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(N.L.Dams$Presa))},
+                aes(color = "Wuibull"),
+                size = 1.1) +
+  labs(title = "Distribución Presa N.L",
        color = "Distribución") +
   theme_bw() +
   theme(legend.position = "bottom")
@@ -943,10 +1012,25 @@ p.N.L.D.P<-ggplot(data = N.L.Dams) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlexp(N.L.Dams$Presipitación))},
                 aes(color = "Exponencial"),
                 size = 1.1) +
-  labs(title = "Distribución Presipitación N.L Dams",
+  labs(title = "Distribución Presipitación N.L",
        color = "Distribución") +
   theme_bw() +
   theme(legend.position = "bottom")
+
+p.N.L.D<-plot_grid(p.N.L.D.Tm,p.N.L.D.TM,p.N.L.D.D,p.N.L.D.P,ncol=2,nrow=2)
+title <- ggdraw() + 
+  draw_label(
+    "Gráficas de N.L considerando presas",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(plot.margin = margin(0, 0, 0, 7))
+
+p.N.L.D<-plot_grid(title,p.N.L.D,ncol = 1,
+                 # rel_heights values control vertical title margins
+                 rel_heights = c(0.1, 1))
+
 
 # CDMX Temporadas
 #Primavera 
@@ -991,8 +1075,8 @@ p.CDMX.P.T<-ggplot(data = CDMX[CDMX$Estación==season,]) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX[CDMX$Estación==season,"Tarifa"]))},
                 aes(color = "Inv Gauss"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlunif(CDMX[CDMX$Estación==season,"Tarifa"]))},
-                aes(color = "Uniforme"),
+  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX[CDMX$Estación==season,"Tarifa"]))},
+                aes(color = "Gumbel"),
                 size = 1.1) +
   labs(title = "Distribución Tarifa CDMX",
        color = "Distribución") +
@@ -1011,13 +1095,24 @@ p.CDMX.P.P<-ggplot(data = CDMX[CDMX$Estación==season,]) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlpower(CDMX[CDMX$Estación==season,"Presipitación"]))},
                 aes(color = "Power"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX[CDMX$Estación==season,"Presipitación"]))},
-                aes(color = "Gumbel"),
-                size = 1.1) +
   labs(title = "Distribución Presipitación CDMX",
        color = "Distribución") +
   theme_bw() +
   theme(legend.position = "bottom")
+
+p.CDMX.S.P<-plot_grid(p.CDMX.P.Tm,p.CDMX.P.TM,p.CDMX.P.T,p.CDMX.P.P)
+title <- ggdraw() + 
+  draw_label(
+    "Gráficas de la CDMX Primavera",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(plot.margin = margin(0, 0, 0, 7))
+
+p.CDMX.S.P<-plot_grid(title,p.CDMX.S.P,ncol = 1,
+                  # rel_heights values control vertical title margins
+                  rel_heights = c(0.1, 1))
 
 #Verano
 season<-"Verano"
@@ -1078,9 +1173,6 @@ p.CDMX.V.P<-ggplot(data = CDMX[CDMX$Estación==season,]) +
   stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(CDMX[CDMX$Estación==season,"Presipitación"]))},
                 aes(color = "Laplace"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(CDMX[CDMX$Estación==season,"Presipitación"]))},
-                aes(color = "Power"),
-                size = 1.1) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlcauchy(CDMX[CDMX$Estación==season,"Presipitación"]))},
                 aes(color = "Cauchy"),
                 size = 1.1) +
@@ -1088,6 +1180,20 @@ p.CDMX.V.P<-ggplot(data = CDMX[CDMX$Estación==season,]) +
        color = "Distribución") +
   theme_bw() +
   theme(legend.position = "bottom")
+
+p.CDMX.S.V<-plot_grid(p.CDMX.V.Tm,p.CDMX.V.TM,p.CDMX.V.T,p.CDMX.V.P)
+title <- ggdraw() + 
+  draw_label(
+    "Gráficas de la CDMX Verano",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(plot.margin = margin(0, 0, 0, 7))
+
+p.CDMX.S.V<-plot_grid(title,p.CDMX.S.V,ncol = 1,
+                  # rel_heights values control vertical title margins
+                  rel_heights = c(0.1, 1))
 
 #Otoño
 season<-"Otoño"
@@ -1148,9 +1254,6 @@ p.CDMX.O.P<-ggplot(data = CDMX[CDMX$Estación==season,]) +
   stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(CDMX[CDMX$Estación==season,"Presipitación"]))},
                 aes(color = "Laplace"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(CDMX[CDMX$Estación==season,"Presipitación"]))},
-                aes(color = "Power"),
-                size = 1.1) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlcauchy(CDMX[CDMX$Estación==season,"Presipitación"]))},
                 aes(color = "Cauchy"),
                 size = 1.1) +
@@ -1159,6 +1262,21 @@ p.CDMX.O.P<-ggplot(data = CDMX[CDMX$Estación==season,]) +
   theme_bw() +
   theme(legend.position = "bottom")
 
+p.CDMX.S.O<-plot_grid(p.CDMX.O.Tm,p.CDMX.O.TM,p.CDMX.O.T,p.CDMX.O.P)
+title <- ggdraw() + 
+  draw_label(
+    "Gráficas de la CDMX Otoño",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(plot.margin = margin(0, 0, 0, 7))
+
+p.CDMX.S.O<-plot_grid(title,p.CDMX.S.O,ncol = 1,
+                  # rel_heights values control vertical title margins
+                  rel_heights = c(0.1, 1))
+
+#Invierno
 season<-"Invierno"
 p.CDMX.I.Tm<-ggplot(data = CDMX[CDMX$Estación==season,]) +
   geom_histogram(aes(x =`Temp min`, y =  after_stat(density)),
@@ -1216,10 +1334,7 @@ p.CDMX.I.P<-ggplot(data = CDMX[CDMX$Estación==season,]) +
   geom_rug(aes(x = Presipitación)) +
   stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(CDMX[CDMX$Estación==season,"Presipitación"]))},
                 aes(color = "Laplace"),
-                size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(CDMX[CDMX$Estación==season,"Presipitación"]))},
-                aes(color = "Power"),
-                size = 1.1) +
+                size = 1.1)+
   stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX[CDMX$Estación==season,"Presipitación"]))},
                 aes(color = "Gumbel"),
                 size = 1.1) +
@@ -1228,7 +1343,19 @@ p.CDMX.I.P<-ggplot(data = CDMX[CDMX$Estación==season,]) +
   theme_bw() +
   theme(legend.position = "bottom")
 
+p.CDMX.S.I<-plot_grid(p.CDMX.I.Tm,p.CDMX.I.TM,p.CDMX.I.T,p.CDMX.I.P)
+title <- ggdraw() + 
+  draw_label(
+    "Gráficas de la CDMX Invierno",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(plot.margin = margin(0, 0, 0, 7))
 
+p.CDMX.S.I<-plot_grid(title,p.CDMX.S.I,ncol = 1,
+                  # rel_heights values control vertical title margins
+                  rel_heights = c(0.1, 1))
 # N.L Temporadas
 #Primavera
 season<-"Primavera"
@@ -1290,9 +1417,6 @@ p.N.L.P.P<-ggplot(data = N.L[N.L$Estación==season,]) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlcauchy(N.L[N.L$Estación==season,"Presipitación"]))},
                 aes(color = "Cauchy"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(N.L[N.L$Estación==season,"Presipitación"]))},
-                aes(color = "Power"),
-                size = 1.1) +
   stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(N.L[N.L$Estación==season,"Presipitación"]))},
                 aes(color = "Laplace"),
                 size = 1.1)+
@@ -1300,6 +1424,21 @@ p.N.L.P.P<-ggplot(data = N.L[N.L$Estación==season,]) +
        color = "Distribución") +
   theme_bw() +
   theme(legend.position = "bottom")
+
+p.N.L.S.P<-plot_grid(p.N.L.P.Tm,p.N.L.P.TM,p.N.L.P.T,p.N.L.P.P)
+title <- ggdraw() + 
+  draw_label(
+    "Gráficas de N.L Primavera",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(plot.margin = margin(0, 0, 0, 7))
+
+p.N.L.S.P<-plot_grid(title,p.N.L.S.P,ncol = 1,
+                 # rel_heights values control vertical title margins
+                 rel_heights = c(0.1, 1))
+
 
 #Verano
 season<-"Verano"
@@ -1369,6 +1508,21 @@ p.N.L.V.P<-ggplot(data = N.L[N.L$Estación==season,]) +
   theme_bw() +
   theme(legend.position = "bottom")
 
+p.N.L.S.V<-plot_grid(p.N.L.V.Tm,p.N.L.V.TM,p.N.L.V.T,p.N.L.V.P)
+title <- ggdraw() + 
+  draw_label(
+    "Gráficas de N.L Verano",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(plot.margin = margin(0, 0, 0, 7))
+
+p.N.L.S.V<-plot_grid(title,p.N.L.S.V,ncol = 1,
+                 # rel_heights values control vertical title margins
+                 rel_heights = c(0.1, 1))
+
+
 #Otoño
 season<-"Otoño"
 p.N.L.O.Tm<-ggplot(data = N.L[N.L$Estación==season,]) +
@@ -1429,9 +1583,6 @@ p.N.L.O.P<-ggplot(data = N.L[N.L$Estación==season,]) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlexp(N.L[N.L$Estación==season,"Presipitación"]))},
                 aes(color = "Exponencial"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(N.L[N.L$Estación==season,"Presipitación"]))},
-                aes(color = "Gumbel"),
-                size = 1.1) +
   stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(N.L[N.L$Estación==season,"Presipitación"]))},
                 aes(color = "Laplace"),
                 size = 1.1)+
@@ -1440,6 +1591,19 @@ p.N.L.O.P<-ggplot(data = N.L[N.L$Estación==season,]) +
   theme_bw() +
   theme(legend.position = "bottom")
 
+p.N.L.S.O<-plot_grid(p.N.L.O.Tm,p.N.L.O.TM,p.N.L.O.T,p.N.L.O.P)
+title <- ggdraw() + 
+  draw_label(
+    "Gráficas de N.L Otoño",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(plot.margin = margin(0, 0, 0, 7))
+
+p.N.L.S.O<-plot_grid(title,p.N.L.S.O,ncol = 1,
+                 # rel_heights values control vertical title margins
+                 rel_heights = c(0.1, 1))
 
 #Invierno
 season<-"Invierno"
@@ -1498,8 +1662,8 @@ p.N.L.I.P<-ggplot(data = N.L[N.L$Estación==season,]) +
                  bins = 40,
                  alpha = 0.3, color = "black") +
   geom_rug(aes(x = Presipitación)) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(N.L[N.L$Estación==season,"Presipitación"]))},
-                aes(color = "Power"),
+  stat_function(fun = function(.x){dml(x = .x, obj = mlcauchy(N.L[N.L$Estación==season,"Presipitación"]))},
+                aes(color = "Cauchy"),
                 size = 1.1) +
   stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(N.L[N.L$Estación==season,"Presipitación"]))},
                 aes(color = "Laplace"),
@@ -1509,6 +1673,19 @@ p.N.L.I.P<-ggplot(data = N.L[N.L$Estación==season,]) +
   theme_bw() +
   theme(legend.position = "bottom")
 
+p.N.L.S.I<-plot_grid(p.N.L.I.Tm,p.N.L.I.TM,p.N.L.I.T,p.N.L.I.P)
+title <- ggdraw() + 
+  draw_label(
+    "Gráficas de N.L Invierno",
+    fontface = 'bold',
+    x = 0,
+    hjust = 0
+  ) +
+  theme(plot.margin = margin(0, 0, 0, 7))
+
+p.N.L.S.I<-plot_grid(title,p.N.L.S.I,ncol = 1,
+                 # rel_heights values control vertical title margins
+                 rel_heights = c(0.1, 1))
 
 #####      COPULAS  ARQUIMEDIANAS     #####
 library(copula)
