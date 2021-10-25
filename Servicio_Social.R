@@ -152,12 +152,61 @@ group_dams<-function(state){
   return(data)
   
 }
+outliersReplaceData <- function(df, colNameData, colNameBy){
+  # creamos una nueva columna llamada igual que colNameData pero con .R
+  colNameData.R <- paste(colNameData, "R", sep=".")
+  df[colNameData.R] <- df[colNameData]
+  
+  # obtenemos los IDs por los que partir el dataframe
+  IDs <- unique(df[,c(colNameBy)])
+  for (id in IDs){
+    data <- df[df[colNameBy] == id, c(colNameData) ]
+    
+    Q  <- quantile(data)
+    minimo <- Q[1]    # valor minimo
+    Q1     <- Q[2]    # primer cuartil
+    Me     <- Q[3]    # mediana
+    Q3     <- Q[4]    # tercer cuartil
+    maximo <- Q[5]    # valor maximo
+    IQR    <- Q3 - Q1
+    
+    lowLimit  <- max(minimo, Q1 - 1.5*IQR)
+    highLimit <- min(maximo, Q3 + 1.5*IQR)
+    
+    # todos los valores donde colNameBy es igual a id
+    # y el valor de colNameData es > Q3 + 1.5 * IQR
+    # lo reemplazamos por la mediana
+    df[df[colNameBy] == id & df[colNameData] > highLimit, c(colNameData.R)] <- Me
+    
+    # lo mismo para el umbral inferior
+    df[df[colNameBy] == id & df[colNameData] < lowLimit, c(colNameData.R)] <- Me
+    
+    cat(paste("El", colNameBy, id, "la mediana(", colNameData, ") ==", Me, "\n", sep=" " ))
+    
+  }
+  df   # devolvemos el valor del dataFrame
+}
+outliersReplace <- function(data){
+  x<-data
+  x5_95 <- quantile(x, c(0.1, 0.90))
+  xrecortada<-x[x>x5_95[1]  & x<x5_95[2]]
+  q1a <- quantile(xrecortada, 0.25)
+  q3a <- quantile(xrecortada, 0.75)
 
+  iqra<-q3a-q1a # Rango = IQR(x)
+  ati_tukeyR <- x<(q1a-1.5*iqra) | x>(q3a+1.5*iqra)
+  which(ati_tukeyR)
+  temp<-x[ati_tukeyR]
+  return(temp)
+}
 CDMX<-group_data.frame("CDMX")
 N.L<-group_data.frame("N.L")
 
 CDMX.Dams<-group_dams("CDMX")
 N.L.Dams<-group_dams("N.L")
+
+summary(CDMX$`Temp max`)
+boxplot(N.L[,1:4])
 
 #####      DISTRIBUCIÓN DE LOS DATOS  #####
 
@@ -169,7 +218,10 @@ library(tidyverse)
 library(actuar)
 library(vcd)
 library(MASS)
-#install.packages("grid")
+library(gamlss)
+library(gamlss.dist)
+library(gamlss.mx)
+#install.packages("")
 
 # Se comparan ?nicamente las distribuciones con un dominio [0, +inf)
 substring_data.frame<-function(data,column,row,string,start,correction){
@@ -657,6 +709,30 @@ d.N.L.Dams<-distr_test(N.L.Dams,c("Temp min","Temp max","Tarifa","Presa","Presip
 d.S.CDMX<-distr_season(CDMX)
 d.S.N.L<-distr_season(N.L)
 
+mx.Tm <- gamlssMX(
+  formula = `Temp min`~ 1,
+  data    = CDMX.Dams,
+  family  = RG,
+  K       = 2,
+  control = MX.control(plot = FALSE)
+)
+
+
+dmx.Tm <- getpdfMX(mx.Tm)
+qmx.Tm<-?gamlss.mx
+mx.P <- gamlssMX(
+  formula = Presipitación~ 1,
+  data    = CDMX.Dams,
+  family  = RG,
+  K       = 2,
+  control = MX.control(plot = FALSE)
+)
+
+
+d_mx.P <- getpdfMX(mx.P)
+
+
+
 #####      GRAFICAS DE LOS DATOS      ####
 library(ggplot2)
 library(univariateML)
@@ -668,14 +744,14 @@ p.CDMX.Tm<-ggplot(data = CDMX) +
                  bins = 40,
                  alpha = 0.3, color = "black") +
   geom_rug(aes(x = `Temp min`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(CDMX$`Temp min`))},
+                aes(color = "Weibull"),
+                size = 1.1) +
   stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(CDMX$`Temp min`))},
                 aes(color = "Laplace"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX$`Temp min`))},
-                aes(color = "Inv Gauss"),
-                size = 1.1) +
   labs(title = "Distribución Temp Min CDMX",
-       color = "Distribución") +
+       color = "Distribución", y="Densidad") +
   theme_bw() +
   theme(legend.position = "bottom")
 
@@ -691,7 +767,7 @@ p.CDMX.TM<-ggplot(data = CDMX) +
                 aes(color = "Gumbel"),
                 size = 1.1) +
   labs(title = "Distribución Temp Max CDMX",
-       color = "Distribución") +
+       color = "Distribución",y="Densidad") +
   theme_bw() +
   theme(legend.position = "bottom")
 
@@ -699,15 +775,15 @@ p.CDMX.T<-ggplot(data = CDMX) +
   geom_histogram(aes(x =Tarifa, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
-  geom_rug(aes(x = `Temp max`)) +
+  geom_rug(aes(x = `Tarifa`)) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX$Tarifa))},
                 aes(color = "Inv Gauss"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX$Tarifa))},
-                aes(color = "Gumbel"),
+  stat_function(fun = function(.x){dml(x = .x, obj = mlunif(CDMX$Tarifa))},
+                aes(color = "Uniforme"),
                 size = 1.1) +
   labs(title = "Distribución Tarifa CDMX",
-       color = "Distribución") +
+       color = "Distribución",y="Densidad") +
   theme_bw() +
   theme(legend.position = "bottom")
 
@@ -720,11 +796,11 @@ p.CDMX.P<-ggplot(data = CDMX) +
   stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(CDMX$Presipitación))},
                 aes(color = "Laplace"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlcauchy(CDMX$Presipitación))},
-                aes(color = "Cauchy"),
+  stat_function(fun = function(.x){dml(x = .x, obj = mlunif(CDMX$Presipitación))},
+                aes(color = "Uniforme"),
                 size = 1.1) +
   labs(title = "Distribución Presipitación CDMX",
-       color = "Distribución") +
+       color = "Distribución",y="Densidad") +
   theme_bw() +
   theme(legend.position = "bottom")
 
@@ -752,11 +828,11 @@ p.N.L.Tm<-ggplot(data = N.L) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(N.L$`Temp min`))},
                 aes(color = "Weibull"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(N.L$`Temp min`))},
-                aes(color = "Gumbel"),
+  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(N.L$`Temp min`))},
+                aes(color = "Power"),
                 size = 1.1) +
   labs(title = "Distribución Temp Min N.L",
-       color = "Distribución") +
+       color = "Distribución",y="Densidad") +
   theme_bw() +
   theme(legend.position = "bottom")
 
@@ -772,7 +848,7 @@ p.N.L.TM<-ggplot(data = N.L) +
                 aes(color = "Inv Gauss"),
                 size = 1.1) +
   labs(title = "Distribución Temp Max N.L",
-       color = "Distribución") +
+       color = "Distribución",y="Densidad") +
   theme_bw() +
   theme(legend.position = "bottom")
 
@@ -781,15 +857,15 @@ p.N.L.T<-ggplot(data = N.L) +
   geom_histogram(aes(x =Tarifa, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
-  geom_rug(aes(x = Presipitación))  +
+  geom_rug(aes(x = Tarifa))  +
   stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(N.L$Tarifa))},
                 aes(color = "Gauss Inv"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(N.L$Tarifa))},
-                aes(color = "Gumbel"),
+  stat_function(fun = function(.x){dml(x = .x, obj = mlunif(N.L$Tarifa))},
+                aes(color = "Uniforme"),
                 size = 1.1) +
   labs(title = "Distribución Tarifa N.L",
-       color = "Distribución") +
+       color = "Distribución", y="Densidad") +
   theme_bw() +
   theme(legend.position = "bottom")
 
@@ -799,8 +875,8 @@ p.N.L.P<-ggplot(data = N.L) +
                  bins = 40,
                  alpha = 0.3, color = "black") +
   geom_rug(aes(x = Presipitación)) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlexp(N.L$Presipitación))},
-                aes(color = "Exponencial"),
+  stat_function(fun = function(.x){dml(x = .x, obj = mlcauchy(N.L$Presipitación))},
+                aes(color = "Cauchy"),
                 size = 1.1) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(N.L$Presipitación))},
                 aes(color = "Gumbel"),
@@ -809,7 +885,7 @@ p.N.L.P<-ggplot(data = N.L) +
               aes(color = "Laplace"),
               size = 1.1)+
   labs(title = "Distribución Presipitación N.L",
-       color = "Distribución") +
+       color = "Distribución",y="Densidad") +
   theme_bw() +
   theme(legend.position = "bottom")
 
@@ -839,11 +915,11 @@ p.CDMX.D.Tm<-ggplot(data = CDMX.Dams) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(CDMX.Dams$`Temp min`))},
                 aes(color = "Weibull"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlpower(CDMX.Dams$`Temp min`))},
-                aes(color = "Power"),
+  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX.Dams$`Temp min`))},
+                aes(color = "Inv Gauss"),
                 size = 1.1) +
   labs(title = "Distribución Temp Min CDMX",
-       color = "Distribución") +
+       color = "Distribución",y="Densidad") +
   theme_bw() +
   theme(legend.position = "bottom")
 
@@ -853,15 +929,15 @@ p.CDMX.D.TM<-ggplot(data = CDMX.Dams) +
   geom_histogram(aes(x =`Temp max`, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
-  geom_rug(aes(x = `Temp min`)) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlbetapr(CDMX.Dams$`Temp max`))},
-                aes(color = "Beta Pr"),
+  geom_rug(aes(x = `Temp max`)) +
+  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(CDMX.Dams$`Temp max`))},
+                aes(color = "Laplace"),
                 size = 1.1) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX.Dams$`Temp max`))},
                 aes(color = "Gauss Inv"),
                 size = 1.1) +
   labs(title = "Distribución Temp Max CDMX",
-       color = "Distribución") +
+       color = "Distribución",y="Densidad") +
   theme_bw() +
   theme(legend.position = "bottom")
 
@@ -870,15 +946,15 @@ p.CDMX.D.T<-ggplot(data = CDMX.Dams) +
   geom_histogram(aes(x =Tarifa, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
-  geom_rug(aes(x = Presipitación)) +
+  geom_rug(aes(x = Tarifa)) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX.Dams$Tarifa))},
                 aes(color = "Gauss Inv"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(CDMX.Dams$Tarifa))},
-                aes(color = "Weibull"),
+  stat_function(fun = function(.x){dml(x = .x, obj = mlunif(CDMX.Dams$Tarifa))},
+                aes(color = "Uniforme"),
                 size = 1.1) +
   labs(title = "Distribución Tarifa CDMX",
-       color = "Distribución") +
+       color = "Distribución",y="Densidad") +
   theme_bw() +
   theme(legend.position = "bottom")
 
@@ -886,15 +962,15 @@ p.CDMX.D.D<-ggplot(data = CDMX.Dams) +
   geom_histogram(aes(x =Presa, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
-  geom_rug(aes(x = Presipitación)) +
+  geom_rug(aes(x = Presa)) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(CDMX.Dams$Presa))},
                 aes(color = "Gauss Inv"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlinvgamma(CDMX.Dams$Presa))},
-                aes(color = "Gamma Inv"),
+  stat_function(fun = function(.x){dml(x = .x, obj = mlunif(CDMX.Dams$Presa))},
+                aes(color = "Unirforme"),
                 size = 1.1) +
   labs(title = "Distribución Presa CDMX",
-       color = "Distribución") +
+       color = "Distribución",y="Densidad") +
   theme_bw() +
   theme(legend.position = "bottom")
 
@@ -906,20 +982,20 @@ p.CDMX.D.P<-ggplot(data = CDMX.Dams) +
   stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(CDMX.Dams$Presipitación))},
                 aes(color = "Laplace"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlgumbel(CDMX.Dams$Presipitación))},
-                aes(color = "Gumbel"),
+  stat_function(fun = function(.x){dml(x = .x, obj = mlunif(CDMX.Dams$Presipitación))},
+                aes(color = "Uniforme"),
                 size = 1.1) +
   labs(title = "Distribución Presipitación CDMX",
-       color = "Distribución") +
+       color = "Distribución",y="Densidad") +
   theme_bw() +
   theme(legend.position = "bottom")
 
 
 p.CDMX.D<-plot_grid(p.CDMX.D.Tm,p.CDMX.D.TM,p.CDMX.D.D,
-                    p.CDMX.D.P)
+                    p.CDMX.D.P,p.CDMX.D.T)
 title <- ggdraw() + 
   draw_label(
-    "Gráficas de la CDMX considerando presas",
+    "Gráficas de la CDMX considerando las principales presas",
     fontface = 'bold',
     x = 0,
     hjust = 0
@@ -946,7 +1022,7 @@ p.N.L.D.Tm<-ggplot(data = N.L.Dams) +
                 aes(color = "Gumbel"),
                 size = 1.1) +
   labs(title = "Distribución Temp Min N.L",
-       color = "Distribución") +
+       color = "Distribución",y="Densidad") +
   theme_bw() +
   theme(legend.position = "bottom")
 
@@ -956,7 +1032,7 @@ p.N.L.D.TM<-ggplot(data = N.L.Dams) +
   geom_histogram(aes(x =`Temp max`, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
-  geom_rug(aes(x = `Temp min`)) +
+  geom_rug(aes(x = `Temp max`)) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlpower(N.L.Dams$`Temp max`))},
                 aes(color = "Power"),
                 size = 1.1) +
@@ -964,7 +1040,7 @@ p.N.L.D.TM<-ggplot(data = N.L.Dams) +
                 aes(color = "Weibull"),
                 size = 1.1) +
   labs(title = "Distribución Temp Max N.L",
-       color = "Distribución") +
+       color = "Distribución",y="Densidad") +
   theme_bw() +
   theme(legend.position = "bottom")
 
@@ -972,15 +1048,15 @@ p.N.L.D.T<-ggplot(data = N.L.Dams) +
   geom_histogram(aes(x =Tarifa, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
-  geom_rug(aes(x = Presipitación)) +
+  geom_rug(aes(x = Tarifa)) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlinvgauss(N.L.Dams$Tarifa))},
                 aes(color = "Gauss Inv"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(N.L.Dams$Tarifa))},
-                aes(color = "Weibull"),
+  stat_function(fun = function(.x){dml(x = .x, obj = mlunif(N.L.Dams$Tarifa))},
+                aes(color = "Uniforme"),
                 size = 1.1) +
   labs(title = "Distribución Tarifa N.L",
-       color = "Distribución") +
+       color = "Distribución",y="Densidad") +
   theme_bw() +
   theme(legend.position = "bottom")
 
@@ -988,15 +1064,15 @@ p.N.L.D.D<-ggplot(data = N.L.Dams) +
   geom_histogram(aes(x =Presa, y =  after_stat(density)),
                  bins = 40,
                  alpha = 0.3, color = "black") +
-  geom_rug(aes(x = Presipitación)) +
+  geom_rug(aes(x = Presa)) +
   stat_function(fun = function(.x){dml(x = .x, obj = mlcauchy(N.L.Dams$Presa))},
-                aes(color = "Gauss Inv"),
+                aes(color = "Weibull"),
                 size = 1.1) +
-  stat_function(fun = function(.x){dml(x = .x, obj = mlweibull(N.L.Dams$Presa))},
-                aes(color = "Wuibull"),
+  stat_function(fun = function(.x){dml(x = .x, obj = mllaplace(N.L.Dams$Presa))},
+                aes(color = "Laplace"),
                 size = 1.1) +
   labs(title = "Distribución Presa N.L",
-       color = "Distribución") +
+       color = "Distribución",y="Densidad") +
   theme_bw() +
   theme(legend.position = "bottom")
 
@@ -1013,14 +1089,15 @@ p.N.L.D.P<-ggplot(data = N.L.Dams) +
                 aes(color = "Exponencial"),
                 size = 1.1) +
   labs(title = "Distribución Presipitación N.L",
-       color = "Distribución") +
+       color = "Distribución",y="Densidad") +
   theme_bw() +
   theme(legend.position = "bottom")
 
-p.N.L.D<-plot_grid(p.N.L.D.Tm,p.N.L.D.TM,p.N.L.D.D,p.N.L.D.P,ncol=2,nrow=2)
+p.N.L.D<-plot_grid(p.N.L.D.Tm,p.N.L.D.TM,p.N.L.D.D,p.N.L.D.P,
+                   p.N.L.D.T)
 title <- ggdraw() + 
   draw_label(
-    "Gráficas de N.L considerando presas",
+    "Gráficas de N.L considerando las principales presas",
     fontface = 'bold',
     x = 0,
     hjust = 0
@@ -1687,240 +1764,246 @@ p.N.L.S.I<-plot_grid(title,p.N.L.S.I,ncol = 1,
                  # rel_heights values control vertical title margins
                  rel_heights = c(0.1, 1))
 
-#####      COPULAS  ARQUIMEDIANAS     #####
+######      COPULAS  ARQUIMEDIANAS     ######
 library(copula)
 library(LaplacesDemon)
+library(VineCopula)
+library(scatterplot3d)
+library(LaplacesDemon)
+library(extraDistr)
+library(ggplot2)
+library(univariateML)
+library(actuar)
 cor_s_k<-function(data){
-  spearman<- data.frame(Metodo=rep("spearman",4),cor(data,y=NULL, use = "everything",  method = "spearman"))
-  kendall<-data.frame(Metodo=rep("kendall",4),cor(data, method="kendall"))
+  n<-as.numeric(dim(data)[2])
+  spearman<- data.frame(Metodo=rep("spearman",n),cor(data,y=NULL, use = "everything",  method = "spearman"))
+  kendall<-data.frame(Metodo=rep("kendall",n),cor(data, method="kendall"))
   return(cbind(spearman,kendall))
 }
 
 cor.CDMX<-cor_s_k(CDMX[,1:4])
 cor.N.L<-cor_s_k(N.L[,1:4])
-
-#Copulas 
-norm.cop.CDMX <- normalCopula(param = cor.CDMX[2,7], dim =2)
-norm.cop.N.L<-normalCopula( param = cor.N.L[2,7], dim =2)
-gumbel.cop <- archmCopula(family="gumbel",dim = 2,  param = 2)
-clayton.cop = archmCopula(family="clayton", dim=2, param=1)
+cor.CDMX.D<-cor_s_k(CDMX.Dams[,1:5])
+cor.N.L.D<-cor_s_k(N.L.Dams[,1:5])
 
 
 # Copula de CDMX
-# Distribuci?n Tem min~Weibull y Tem max~Inv Gauss #
 #Copula normal 
-norm.CDF.weibull.invgauss<- mvdc(norm.cop.CDMX, margins=c("weibull","invgauss"), 
+set.seed(139907)
+rho.CDMX<-c(as.numeric(cor.CDMX[1,8:10]),as.numeric(cor.CDMX[2,9:10]),as.numeric(cor.CDMX[3,10]))
+n.cop.CDMX <- normalCopula(param = rho.CDMX, dim =4,"un")
+
+norm.CDF.CDMX<- mvdc(n.cop.CDMX, margins=c("weibull","invgauss","laplace","unif"), 
                                  paramMargins=list( list(shape= as.numeric(mlweibull(CDMX$`Temp min`)[1]), 
-                                                         scale =as.numeric(mlweibull(CDMX$`Temp min`)[2])),  
+                                                          scale=as.numeric(mlweibull(CDMX$`Temp min`)[2])),  
                                                     list(mean=as.numeric(mlinvgauss(CDMX$`Temp max`)[1]),
-                                                         shape=as.numeric(mlinvgauss(CDMX$`Temp max`)[2]))))
+                                                         shape=as.numeric(mlinvgauss(CDMX$`Temp max`)[2])),
+                                                    list(mu=as.numeric(mllaplace(CDMX$Presipitación)[1]),
+                                                         sigma=as.numeric(mllaplace(CDMX$Presipitación)[2])),
+                                                    list(min=as.numeric(mlunif(CDMX$Tarifa)[1]),
+                                                         max=as.numeric(mlunif(CDMX$Tarifa)[2]))
+                                                    ))
 
-start.vals.weibull.invgauss<- c(c(as.numeric(mlweibull(CDMX$`Temp min`)[1]), as.numeric(mlweibull(CDMX$`Temp min`)[2])), 
-                                c(as.numeric(mlinvgauss(CDMX$`Temp max`)[1]), as.numeric(mlinvgauss(CDMX$`Temp max`)[2])),
-                                cor.CDMX[2,7])
-#El orden de los valores iniciales afecta dr?sticamente la viabilidad del ajuste
-calibration.norm.weibull.invgauss<- fitMvdc( cbind(CDMX$`Temp min`,CDMX$`Temp max`),
-                                             norm.CDF.weibull.invgauss,
-                                             start= start.vals.weibull.invgauss)
+CDMX.sim<-data.frame(rMvdc(dim(CDMX)[1], norm.CDF.CDMX))
 
-parameters.CDMX<-data.frame(Modelo="norm.weibull.invgauss",
-                            mean.Tmin = coef(calibration.norm.weibull.invgauss)[1], 
-                            shape.Tmin = coef(calibration.norm.weibull.invgauss)[2], 
-                            mean.Tmax= coef(calibration.norm.weibull.invgauss)[3], 
-                            shape.Tmax= coef(calibration.norm.weibull.invgauss)[4], 
-                            tau = coef(calibration.norm.weibull.invgauss)[5], 
-                            stringsAsFactors = FALSE)
+start.CDMX<- c(c(as.numeric(mlweibull(CDMX$`Temp min`)[1]), 
+                 as.numeric(mlweibull(CDMX$`Temp min`)[2])),  
+               c(as.numeric(mlinvgauss(CDMX$`Temp max`)[1]),
+                 as.numeric(mlinvgauss(CDMX$`Temp max`)[2])),
+               c(as.numeric(mllaplace(CDMX$Presipitación)[1]),
+                 as.numeric(mllaplace(CDMX$Presipitación)[2])),
+               c(as.numeric(mlunif(CDMX$Tarifa)[1]),
+                 as.numeric(mlunif(CDMX$Tarifa)[2])),
+               rho.CDMX)
 
-sim.calibration.norm.weibull.invgauss<- rMvdc(dim(CDMX)[1], 
-                                              norm.CDF.weibull.invgauss)
-prediction.CDMX<-data.frame(Modelo=rep("norm.weibull.invgauss",428),as.data.frame(sim.calibration.norm.weibull.invgauss) ) 
-
-
-#Copula Gumbel
-
-gumbel.CDF.weibull.invgauss<- mvdc(gumbel.cop, margins=c("weibull","invgauss"), 
-                                   paramMargins=list( list(shape= as.numeric(mlweibull(CDMX$`Temp min`)[1]), 
-                                                           scale =as.numeric(mlweibull(CDMX$`Temp min`)[2])),  
-                                                      list(mean=as.numeric(mlinvgauss(CDMX$`Temp max`)[1]),
-                                                           shape=as.numeric(mlinvgauss(CDMX$`Temp max`)[2]))))
-
-start.vals.weibull.invgauss<- c(c(as.numeric(mlweibull(CDMX$`Temp min`)[1]), as.numeric(mlweibull(CDMX$`Temp min`)[2])), 
-                                c(as.numeric(mlinvgauss(CDMX$`Temp max`)[1]), as.numeric(mlinvgauss(CDMX$`Temp max`)[2])),
-                                cor.CDMX[2,7])
-#El orden de los valores iniciales afecta dr?sticamente la viabilidad del ajuste
-calibration.gumbel.weibull.invgauss<- fitMvdc( cbind(CDMX$`Temp min`,CDMX$`Temp max`),
-                                               gumbel.CDF.weibull.invgauss,
-                                               start= start.vals.weibull.invgauss)
-
-parameters.CDMX<-rbind(parameters.CDMX,data.frame("gumbel.weibull.invgauss",
-                                                  mean.Tmin = coef(calibration.gumbel.weibull.invgauss)[1], 
-                                                  shape.Tmin = coef(calibration.gumbel.weibull.invgauss)[2], 
-                                                  mean.Tmax= coef(calibration.gumbel.weibull.invgauss)[3], 
-                                                  shape.Tmax= coef(calibration.gumbel.weibull.invgauss)[4], 
-                                                  tau = coef(calibration.gumbel.weibull.invgauss)[5], 
-                                                  stringsAsFactors = FALSE))
-
-sim.calibration.norm.W.IG<- rMvdc(dim(CDMX)[1], 
-                                  norm.CDF.weibull.invgauss)
-prediction.CDMX<-data.frame(Modelo=rep("norm.weibull.invgauss",428),as.data.frame(sim.calibration.norm.weibull.invgauss) ) 
+ajuste.CDMX<-fitMvdc( data=CDMX.sim, 
+                      mvdc=norm.CDF.CDMX, 
+                       start= start.CDMX)
 
 
-# Distribuci?n Tem min~Weibull y Tem max~Gumbel
+scatterplot3d(CDMX.sim[,1:3])
+scatterplot3d(CDMX[,1:3])
+ggplot(data = CDMX) +
+  geom_point(aes(x =`Tarifa`, y =  Presipitación), color = "black") +
+  geom_point(data=CDMX.sim, 
+             mapping = aes(x=X4,y=X3),color = "red")+
+  labs(title = "",
+       color = "Distribución") +
+  ylim(0,max(CDMX$Presipitación))+
+  theme_bw() +
+  theme(legend.position = "bottom")
 
-norm.CDF.weibull.gumbel<- mvdc(norm.cop.CDMX, margins=c("weibull","gumbel"), 
-                               paramMargins=list( list(shape= as.numeric(mlweibull(CDMX$`Temp min`)[1]), 
-                                                       scale =as.numeric(mlweibull(CDMX$`Temp min`)[2])),  
-                                                  list(alpha=as.numeric(mlgumbel(CDMX$`Temp max`)[1]),
-                                                       scale=as.numeric(mlgumbel(CDMX$`Temp max`)[2]))))
 
-start.vals.norm.weibull.gumbel<- c(c(as.numeric(mlweibull(CDMX$`Temp min`)[1]), as.numeric(mlweibull(CDMX$`Temp min`)[2])), 
-                                   c(as.numeric(mlgumbel(CDMX$`Temp max`)[1]), as.numeric(mlgumbel(CDMX$`Temp max`)[2])),
-                                   cor.CDMX[2,7])
-#El orden de los valores iniciales afecta dr?sticamente la viabilidad del ajuste
-calibration.norm.weibull.gumbel<- fitMvdc( cbind(CDMX$`Temp min`,CDMX$`Temp max`),
-                                           norm.CDF.weibull.gumbel,
-                                           start= start.vals.norm.weibull.gumbel)
 
-parameters.CDMX<-rbind(parameters.CDMX,data.frame(Modelo="norm.weibull.gumbel",
-                                                  mean.Tmin = coef(calibration.norm.weibull.gumbel)[1], 
-                                                  shape.Tmin = coef(calibration.norm.weibull.gumbel)[2], 
-                                                  mean.Tmax= coef(calibration.norm.weibull.gumbel)[3], 
-                                                  shape.Tmax= coef(calibration.norm.weibull.gumbel)[4], 
-                                                  tau = coef(calibration.norm.weibull.gumbel)[5], 
-                                                  stringsAsFactors = FALSE))
+### CDMX DAMS
 
-sim.calibration.norm.weibull.gumbel<- rMvdc(dim(CDMX)[1], 
-                                            norm.CDF.weibull.gumbel)
-prediction.CDMX<-cbind(prediction.CDMX,data.frame(Modelo=rep("norm.weibull.gumbel",428),as.data.frame(sim.calibration.norm.weibull.gumbel) ) )
+set.seed(139907)
+rho.CDMX.D<-c(as.numeric(cor.CDMX.D[1,9:12]),as.numeric(cor.CDMX.D[2,10:12]),as.numeric(cor.CDMX.D[3,11:12]),as.numeric(cor.CDMX.D[4,12]))
+n.cop.CDMX.D <-  normalCopula(param=rho.CDMX.D, dim = 5, dispstr = "un")
 
-# Distribuci?n Tem min~Laplace y Tem min~Inv Gauss
-norm.CDF.laplace.invgauss<- mvdc(norm.cop.CDMX, margins=c("laplace","invgauss"), 
-                                 paramMargins=list( list(location= as.numeric(mllaplace(CDMX$`Temp min`)[1]), 
-                                                         scale=as.numeric(mllaplace(CDMX$`Temp min`)[2])),  
-                                                    list(mean=as.numeric(mlinvgauss(CDMX$`Temp max`)[1]),
-                                                         shape=as.numeric(mlinvgauss(CDMX$`Temp max`)[2]))))
+norm.CDF.CDMX.D<- mvdc(n.cop.CDMX.D, margins=c("weibull","laplace","laplace","invgauss","invgauss"), 
+                        paramMargins=list( list(shape= as.numeric(mlweibull(CDMX.Dams$`Temp min`)[1]), 
+                                                scale=as.numeric(mlweibull(CDMX.Dams$`Temp min`)[2])),  
+                                           list(mu=as.numeric(mllaplace(CDMX.Dams$`Temp max`)[1]),
+                                                sigma=as.numeric(mllaplace(CDMX.Dams$`Temp max`)[2])),
+                                           list(mu=as.numeric(mllaplace(CDMX.Dams$Presipitación)[1]),
+                                                sigma=as.numeric(mllaplace(CDMX.Dams$Presipitación)[2])),
+                                           list(mean=as.numeric(mlinvgauss(CDMX.Dams$Presa)[1]),
+                                               shape=as.numeric(mlinvgauss(CDMX.Dams$Presa)[2])),
+                                           list(mean=as.numeric(mlinvgauss(CDMX.Dams$Tarifa)[1]),
+                                               shape=as.numeric(mlinvgauss(CDMX.Dams$Tarifa)[2]))
+                        ))
 
-start.vals.laplace.invgauss<- c(c(as.numeric(mllaplace(CDMX$`Temp min`)[1]), as.numeric(mllaplace(CDMX$`Temp min`)[2])), 
-                                c(as.numeric(mlinvgauss(CDMX$`Temp max`)[1]), as.numeric(mlinvgauss(CDMX$`Temp max`)[2])),
-                                cor.CDMX[2,7])
-#El orden de los valores iniciales afecta dr?sticamente la viabilidad del ajuste
-calibration.norm.laplace.invgauss<- fitMvdc( cbind(CDMX$`Temp min`,CDMX$`Temp max`),
-                                             norm.CDF.laplace.invgauss,
-                                             start= start.vals.laplace.invgauss)
+CDMX.D.sim<-data.frame(rMvdc(dim(CDMX.Dams)[1], norm.CDF.CDMX.D))
 
-parameters.CDMX<-rbind(parameters.CDMX,data.frame(Modelo="norm.laplace.invgauss",
-                                                  mean.Tmin = coef(calibration.norm.laplace.invgauss)[1], 
-                                                  shape.Tmin = coef(calibration.norm.laplace.invgauss)[2], 
-                                                  mean.Tmax= coef(calibration.norm.laplace.invgauss)[3], 
-                                                  shape.Tmax= coef(calibration.norm.laplace.invgauss)[4], 
-                                                  tau = coef(calibration.norm.laplace.invgauss)[5], 
-                                                  stringsAsFactors = FALSE))
 
-sim.calibration.norm.laplace.invgauss<- rMvdc(dim(CDMX)[1], 
-                                              norm.CDF.laplace.invgauss)
-prediction.CDMX<-cbind(prediction.CDMX,data.frame(Modelo=rep("norm.laplace.invgauss",428),as.data.frame(sim.calibration.norm.laplace.invgauss) ) )
+ggplot(data = CDMX.Dams) +
+  geom_point(aes(x =`Tarifa`, y =  Presa, color = "Reales")) +
+  geom_point(data=CDMX.D.sim[CDMX.D.sim$X3>0,], 
+             mapping = aes(x=X5,y=X4,color = "Simulados"))+
+  labs(title = "Gráfica de relación Presa-Tarifa CDMX normal", 
+       color="Datos") +
+  theme_bw() +
+  theme(legend.position = "bottom")
 
-# Distribuci?n Tem min~Laplace y Tem max~Gumbel
-norm.CDF.laplace.gumbel<- mvdc(norm.cop.CDMX, margins=c("laplace","gumbel"), 
-                               paramMargins=list( list(location= as.numeric(mllaplace(CDMX$`Temp min`)[1]), 
-                                                       scale= as.numeric(mllaplace(CDMX$`Temp min`)[2])),  
-                                                  list(alpha=as.numeric(mlgumbel(CDMX$`Temp max`)[1]),
-                                                       scale=as.numeric(mlgumbel(CDMX$`Temp max`)[2]))))
 
-start.vals.norm.laplace.gumbel<- c(c(as.numeric(mllaplace(CDMX$`Temp min`)[1]), as.numeric(mllaplace(CDMX$`Temp min`)[2])), 
-                                   c(as.numeric(mlgumbel(CDMX$`Temp max`)[1]), as.numeric(mlgumbel(CDMX$`Temp max`)[2])),
-                                   cor.CDMX[2,7])
-#El orden de los valores iniciales afecta dr?sticamente la viabilidad del ajuste
-calibration.norm.laplace.gumbel<- fitMvdc( cbind(CDMX$`Temp min`,CDMX$`Temp max`),
-                                           norm.CDF.laplace.gumbel,
-                                           start= start.vals.norm.laplace.gumbel)
 
-parameters.CDMX<-rbind(parameters.CDMX,data.frame(Modelo="norm.laplace.gumbel",
-                                                  mean.Tmin = coef(calibration.norm.laplace.gumbel)[1], 
-                                                  shape.Tmin = coef(calibration.norm.laplace.gumbel)[2], 
-                                                  mean.Tmax= coef(calibration.norm.laplace.gumbel)[3], 
-                                                  shape.Tmax= coef(calibration.norm.laplace.gumbel)[4], 
-                                                  tau = coef(calibration.norm.laplace.gumbel)[5], 
-                                                  stringsAsFactors = FALSE))
+#t studient
+set.seed(139907)
+rho.CDMX.D<-c(as.numeric(cor.CDMX.D[1,9:12]),as.numeric(cor.CDMX.D[2,10:12]),as.numeric(cor.CDMX.D[3,11:12]),as.numeric(cor.CDMX.D[4,12]))
+t.cop.CDMX.D <- tCopula(param=rho.CDMX.D, dim = 5, dispstr = "un")
 
-sim.calibration.norm.laplace.gumbel<- rMvdc(dim(CDMX)[1], 
-                                            norm.CDF.laplace.gumbel)
-prediction.CDMX<-cbind(prediction.CDMX,data.frame(Modelo=rep("norm.laplace.gumbel",428),as.data.frame(sim.calibration.norm.laplace.gumbel) ) )
+t.CDF.CDMX.D<- mvdc(t.cop.CDMX.D, margins=c("weibull","laplace","laplace","invgauss","invgauss"), 
+                    paramMargins=list( list(shape= as.numeric(mlweibull(CDMX.Dams$`Temp min`)[1]), 
+                                            scale=as.numeric(mlweibull(CDMX.Dams$`Temp min`)[2])),  
+                                       list(mu=as.numeric(mllaplace(CDMX.Dams$`Temp max`)[1]),
+                                            sigma=as.numeric(mllaplace(CDMX.Dams$`Temp max`)[2])),
+                                       list(mu=as.numeric(mllaplace(CDMX.Dams$Presipitación)[1]),
+                                            sigma=as.numeric(mllaplace(CDMX.Dams$Presipitación)[2])),
+                                       list(mean=as.numeric(mlinvgauss(CDMX.Dams$Presa)[1]),
+                                            shape=as.numeric(mlinvgauss(CDMX.Dams$Presa)[2])),
+                                       list(mean=as.numeric(mlinvgauss(CDMX.Dams$Tarifa)[1]),
+                                            shape=as.numeric(mlinvgauss(CDMX.Dams$Tarifa)[2]))
+                    ))
 
-mean(CDMX$`Temp max`)
+CDMX.D.sim.t<-data.frame(rMvdc(dim(CDMX.Dams)[1], t.CDF.CDMX.D))
+
+
+scatterplot3d(CDMX.D.sim.t[CDMX.D.sim.t$X3>0,1:3])
+scatterplot3d(CDMX.Dams[,1:3])
+
+
+ggplot(data = CDMX.Dams) +
+  geom_point(aes(x =`Tarifa`, y =  Presa, color = "Reales")) +
+  geom_point(data=CDMX.D.sim.t[CDMX.D.sim.t$X3>0,], 
+             mapping = aes(x=X5,y=X4,color = "Simulados"))+
+  labs(title = "Gráfica de relación Presa-Tarifa CDMX t-studient",
+       color = "Datos") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+
 # Distribución de N.L
-# Distribución Tem min~Uniforme y Tem max~Weibull #
-norm.cop <- normalCopula( param = cor.N.L[2,7], dim =2)
-norm.CDF.U.W<- mvdc(norm.cop, margins=c("unif","weibull"), 
-                    paramMargins=list( list(min= as.numeric(mlunif(N.L$`Temp min`)[1]), 
-                                            max =as.numeric(mlunif(N.L$`Temp min`)[2])),  
-                                       list(shape=as.numeric(mlweibull(N.L$`Temp max`)[1]),
-                                            scale=as.numeric(mlweibull(N.L$`Temp max`)[2]))))
 
-start.vals.nor.U.W<- c(c(as.numeric(mlunif(N.L$`Temp min`)[1]), 
-                         as.numeric(mlunif(N.L$`Temp min`)[2])), 
-                       c(as.numeric(mlweibull(N.L$`Temp max`)[1]), 
-                         as.numeric(mlweibull(N.L$`Temp max`)[2])),
-                       cor.N.L[2,7])
-#El orden de los valores iniciales afecta dr?sticamente la viabilidad del ajuste
-calibration.norm.U.W<- fitMvdc( cbind(N.L$`Temp min`,N.L$`Temp max`),
-                                norm.CDF.U.W,
-                                start= start.vals.nor.U.W)
+rho.N.L<-c(as.numeric(cor.N.L[1,8:10]),as.numeric(cor.N.L[2,9:10]),as.numeric(cor.N.L[3,10]))
 
-parameters.N.L<-data.frame("norm.U.W",
-                           mean.Tmin = coef(calibration.norm.U.W)[1], 
-                           shape.Tmin = coef(calibration.norm.U.W)[2], 
-                           mean.Tmax= coef(calibration.norm.U.W)[3], 
-                           shape.Tmax= coef(calibration.norm.U.W)[4], 
-                           tau = coef(calibration.norm.U.W)[5], 
-                           stringsAsFactors = FALSE)
-
-sim.calibration.norm.U.W<- rMvdc(dim(N.L)[1], 
-                                 norm.CDF.U.W)
-prediction.N.L<-data.frame(Modelo=rep("norm.U.W",428),as.data.frame(sim.calibration.norm.U.W) ) 
+set.seed(139907)
+n.cop.N.L <- normalCopula(param = rho.N.L, dim =4,"un")
+norm.CDF.N.L<- mvdc(n.cop.N.L, margins=c("weibull","weibull","laplace","unif"), 
+                     paramMargins=list( list(shape= as.numeric(mlweibull(N.L$`Temp min`)[1]), 
+                                             scale=as.numeric(mlweibull(N.L$`Temp min`)[2])),  
+                                        list(shape=as.numeric(mlweibull(N.L$`Temp max`)[1]),
+                                             scale=as.numeric(mlweibull(N.L$`Temp max`)[2])),
+                                        list(mu=as.numeric(mllaplace(N.L$Presipitación)[1]),
+                                             sigma=as.numeric(mllaplace(N.L$Presipitación)[2])),
+                                        list(min=as.numeric(mlunif(N.L$Tarifa)[1]),
+                                             max=as.numeric(mlunif(N.L$Tarifa)[2]))
+                     ))
 
 
 
+N.L.sim<-data.frame(rMvdc(dim(N.L)[1], norm.CDF.N.L))
+
+scatterplot3d(N.L.sim[,1:3])
+scatterplot3d(N.L[,1:3])
+ggplot(data = N.L) +
+  geom_point(aes(x =`Tarifa`, y =  Presipitación), color = "black") +
+  geom_point(data=N.L.sim, 
+             mapping = aes(x=X4,y=X3),color = "red")+
+  labs(title = "Distribución Temp Min CDMX",
+       color = "Distribución") +
+  ylim(0,max(N.L$Presipitación))+
+  theme_bw() +
+  theme(legend.position = "bottom")
 
 
-# Distribución Tem min~Uniforme y Tem max~Inv Gauss
+### N.L DAMS
+#Copula Normal
+rho.N.L.D<-c(as.numeric(cor.N.L.D[1,9:12]),as.numeric(cor.N.L.D[2,10:12]),as.numeric(cor.N.L.D[3,11:12]),as.numeric(cor.N.L.D[4,12]))
+set.seed(139907)
+n.cop.N.L.D <-  normalCopula(param=rho.CDMX.D, dim = 5, dispstr = "un")
 
-# Distribución Tem min~Weibull y Tem min~Weibull
-norm.cop <- normalCopula( param = cor.N.L[2,7], dim =2)
-norm.CDF.W.W<- mvdc(norm.cop, margins=c("weibull","weibull"), 
-                    paramMargins=list( list(shape= as.numeric(mlweibull(N.L$`Temp min`)[1]), 
-                                            scale =as.numeric(mlweibull(N.L$`Temp min`)[2])),  
-                                       list(shape=as.numeric(mlweibull(N.L$`Temp max`)[1]),
-                                            scale=as.numeric(mlweibull(N.L$`Temp max`)[2]))))
-
-start.vals.nor.W.W<- c(c(as.numeric(mlweibull(N.L$`Temp min`)[1]), 
-                         as.numeric(mlweibull(N.L$`Temp min`)[2])), 
-                       c(as.numeric(mlweibull(N.L$`Temp max`)[1]), 
-                         as.numeric(mlweibull(N.L$`Temp max`)[2])),
-                       cor.N.L[2,7])
-#El orden de los valores iniciales afecta drasticamente la viabilidad del ajuste
-calibration.norm.W.W<- fitMvdc( cbind(N.L$`Temp min`,N.L$`Temp max`),
-                                norm.CDF.W.W,
-                                start= start.vals.nor.W.W)
-
-parameters.N.L<-data.frame("norm.W.W",
-                           mean.Tmin = coef(calibration.norm.W.W)[1], 
-                           shape.Tmin = coef(calibration.norm.W.W)[2], 
-                           mean.Tmax= coef(calibration.norm.W.W)[3], 
-                           shape.Tmax= coef(calibration.norm.W.W)[4], 
-                           tau = coef(calibration.norm.W.W)[5], 
-                           stringsAsFactors = FALSE)
-
-sim.calibration.norm.W.W<- rMvdc(dim(N.L)[1], 
-                                 norm.CDF.W.W)
-prediction.N.L<-cbind(prediction.N.L,data.frame(Modelo=rep("norm.W.W",428),as.data.frame(sim.calibration.norm.W.W) )) 
+norm.CDF.N.L.D<- mvdc(n.cop.N.L.D, margins=c("power","weibull","laplace","laplace","invgauss"), 
+                       paramMargins=list( list(alpha= as.numeric(mlpower(N.L.Dams$`Temp min`)[1]), 
+                                               beta=as.numeric(mlpower(N.L.Dams$`Temp min`)[2])),  
+                                          list(shape=as.numeric(mlweibull(N.L.Dams$`Temp max`)[1]),
+                                               scale=as.numeric(mlweibull(N.L.Dams$`Temp max`)[2])),
+                                          list(mu=as.numeric(mllaplace(N.L.Dams$Presipitación)[1]),
+                                               sigma=as.numeric(mllaplace(N.L.Dams$Presipitación)[2])),
+                                          list(mu=as.numeric(mllaplace(N.L.Dams$Presa)[1]),
+                                               sigma=as.numeric(mllaplace(N.L.Dams$Presa)[2])),
+                                          list(mean=as.numeric(mlinvgauss(N.L.Dams$Tarifa)[1]),
+                                               shape=as.numeric(mlinvgauss(N.L.Dams$Tarifa)[2]))
+                       ))
 
 
 
 
-# Distribución Tem min~Weibull y Tem max~Inv Gauss
+N.L.D.sim<-data.frame(rMvdc(dim(N.L.Dams)[1], norm.CDF.N.L.D))
+
+scatterplot3d(N.L.D.sim[,1:3])
+scatterplot3d(N.L.Dams[,1:3])
+ggplot(data = N.L.Dams) +
+  geom_point(aes(x =`Tarifa`, y =  Presa, color = "Reales")) +
+  geom_point(data=N.L.D.sim, 
+             mapping = aes(x=X5,y=X4,color = "Simulados"))+
+  labs(title = "Gráfica de relación Presa-Tarifa N.L normal",
+       color = "Datos") +
+  theme_bw() +
+  theme(legend.position = "bottom")
+
+#Copula t student
+set.seed(139907)
+t.cop.N.L.D <-tCopula(param=rho.CDMX.D, dim = 5, dispstr = "un")
+
+t.CDF.N.L.D<- mvdc(t.cop.N.L.D, margins=c("power","weibull","laplace","laplace","invgauss"), 
+                      paramMargins=list( list(alpha= as.numeric(mlpower(N.L.Dams$`Temp min`)[1]), 
+                                              beta=as.numeric(mlpower(N.L.Dams$`Temp min`)[2])),  
+                                         list(shape=as.numeric(mlweibull(N.L.Dams$`Temp max`)[1]),
+                                              scale=as.numeric(mlweibull(N.L.Dams$`Temp max`)[2])),
+                                         list(mu=as.numeric(mllaplace(N.L.Dams$Presipitación)[1]),
+                                              sigma=as.numeric(mllaplace(N.L.Dams$Presipitación)[2])),
+                                         list(mu=as.numeric(mllaplace(N.L.Dams$Presa)[1]),
+                                              sigma=as.numeric(mllaplace(N.L.Dams$Presa)[2])),
+                                         list(mean=as.numeric(mlinvgauss(N.L.Dams$Tarifa)[1]),
+                                              shape=as.numeric(mlinvgauss(N.L.Dams$Tarifa)[2]))
+                      ))
 
 
+
+
+N.L.D.sim.t<-data.frame(rMvdc(dim(N.L.Dams)[1], t.CDF.N.L.D))
+
+scatterplot3d(N.L.D.sim.t[N.L.D.sim.t$X3>0,1:3])
+scatterplot3d(N.L.Dams[,1:3])
+ggplot(data = N.L.Dams) +
+  geom_point(aes(x =`Tarifa`, y =  Presa, color = "Reales")) +
+  geom_point(data=N.L.D.sim.t, 
+             mapping = aes(x=X5,y=X4,color = "Simulados"))+
+  labs(title = "Gráfica de relación Presa-Tarifa N.L t-studient",
+       color = "Datos") +
+  theme_bw() +
+  theme(legend.position = "bottom")
 
 ##### EXPORTAR DATOS ####
 library(xlsx)
