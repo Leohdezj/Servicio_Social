@@ -1734,7 +1734,7 @@ ggplot(data = CDMX) +
   theme_bw() +
   theme(legend.position = "bottom")
 
-
+names(CDMX.sim)=c("Temp Min","Temp Max","Precipitación","Tarifa")
 
 ### CDMX DAMS
 
@@ -1767,6 +1767,7 @@ ggplot(data = CDMX.Dams) +
   theme_bw() +
   theme(legend.position = "bottom")
 
+names(CDMX.D.sim)=c("Temp Min","Temp Max","Precipitación","Presa","Tarifa")
 
 
 #t studient
@@ -1803,6 +1804,8 @@ ggplot(data = CDMX.Dams) +
   theme_bw() +
   theme(legend.position = "bottom")
 
+names(CDMX.D.sim.t)=c("Temp Min","Temp Max","Precipitación","Presa","Tarifa")
+
 
 # Distribución de N.L
 
@@ -1837,6 +1840,7 @@ ggplot(data = N.L) +
   theme_bw() +
   theme(legend.position = "bottom")
 
+names(N.L.sim)=c("Temp Min","Temp Max","Precipitación","Tarifa")
 
 ### N.L DAMS
 #Copula Normal
@@ -1872,6 +1876,8 @@ ggplot(data = N.L.Dams) +
        color = "Datos") +
   theme_bw() +
   theme(legend.position = "bottom")
+names(N.L.D.sim)=c("Temp Min","Temp Max","Precipitación","Presa","Tarifa")
+
 
 #Copula t student
 set.seed(139907)
@@ -1906,6 +1912,8 @@ ggplot(data = N.L.Dams) +
   theme_bw() +
   theme(legend.position = "bottom")
 
+names(N.L.D.sim.t)=c("Temp Min","Temp Max","Precipitación","Presa","Tarifa")
+
 ##### EXPORTAR DATOS ####
 library(xlsx)
 
@@ -1915,16 +1923,28 @@ write.xlsx(CDMX,file="ServicioSocial.xlsx",sheetName="DATA CDMX",
 write.xlsx(N.L,file="ServicioSocial.xlsx",sheetName="DATA N.L", 
            append=TRUE)
 
-write.xlsx(dams.CDMX,file="ServicioSocial.xlsx",sheetName="DAMS CDMX", 
+write.xlsx(CDMX.Dams,file="ServicioSocial.xlsx",sheetName="DATA DAMS CDMX", 
            append=T)
 
-write.xlsx(dams.N.L,file="ServicioSocial.xlsx",sheetName="DAMS N.L", 
+write.xlsx(N.L.Dams,file="ServicioSocial.xlsx",sheetName="DATA DAMS N.L", 
            append=T)
 
-write.xlsx(distr.CDMX,file="ServicioSocial.xlsx",sheetName="DISTR CDMX", 
+write.xlsx(d.CDMX,file="ServicioSocial.xlsx",sheetName="DISTR CDMX", 
            append=T)
 
-write.xlsx(distr.N.L,file="ServicioSocial.xlsx",sheetName="DISTR N.L", 
+write.xlsx(d.N.L,file="ServicioSocial.xlsx",sheetName="DISTR N.L", 
+           append=T)
+
+write.xlsx(d.CDMX.Dams,file="ServicioSocial.xlsx",sheetName="DISTR DAMS CDMX", 
+           append=T)
+
+write.xlsx(d.N.L.Dams,file="ServicioSocial.xlsx",sheetName="DISTR DAMS N.L", 
+           append=T)
+
+write.xlsx(d.S.CDMX,file="ServicioSocial.xlsx",sheetName="DISTR SEASON CDMX", 
+           append=T)
+
+write.xlsx(d.S.N.L,file="ServicioSocial.xlsx",sheetName="DISTR SEASON N.L", 
            append=T)
 
 write.xlsx(cor.CDMX,file="ServicioSocial.xlsx",sheetName="COR CDMX", 
@@ -1933,8 +1953,26 @@ write.xlsx(cor.CDMX,file="ServicioSocial.xlsx",sheetName="COR CDMX",
 write.xlsx(cor.N.L,file="ServicioSocial.xlsx",sheetName="COR N.L", 
            append=T)
 
-write.xlsx(parameters.CDMX,file="ServicioSocial.xlsx",sheetName="PARAM CDMX", 
+write.xlsx(cor.CDMX.D,file="ServicioSocial.xlsx",sheetName="COR DAMS CDMX", 
            append=T)
 
-write.xlsx(parameters.N.L,file="ServicioSocial.xlsx",sheetName="PARAM N.L", 
+write.xlsx(cor.N.L.D,file="ServicioSocial.xlsx",sheetName="COR DAMS N.L", 
+           append=T)
+
+write.xlsx(CDMX.sim,file="ServicioSocial.xlsx",sheetName="SIM CDMX", 
+           append=T)
+
+write.xlsx(N.L.sim,file="ServicioSocial.xlsx",sheetName="SIM N.L", 
+           append=T)
+
+write.xlsx(CDMX.D.sim,file="ServicioSocial.xlsx",sheetName="SIM DAMS CDMX", 
+           append=T)
+
+write.xlsx(N.L.D.sim,file="ServicioSocial.xlsx",sheetName="SIM DAMS N.L", 
+           append=T)
+
+write.xlsx(CDMX.D.sim.t,file="ServicioSocial.xlsx",sheetName="SIM T-E DAMS CDMX", 
+           append=T)
+
+write.xlsx(N.L.D.sim.t,file="ServicioSocial.xlsx",sheetName="SIM T-E DAMS N.L", 
            append=T)
